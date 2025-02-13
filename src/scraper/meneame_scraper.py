@@ -1,5 +1,10 @@
+import json
+from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
+
+from src.model.meneame_entry import MeneameEntry
 
 
 class MeneameScraper:
@@ -9,7 +14,7 @@ class MeneameScraper:
     def valid_suburls(self):
         return ["/", "/queue", "/articles", "/popular", "/top_visited"]
 
-    def scrape(self, suburl_to_scrape):
+    def scrape(self, suburl_to_scrape) -> list[MeneameEntry]:
         if suburl_to_scrape not in self.valid_suburls():
             raise ValueError("Invalid URL")
 
@@ -38,12 +43,32 @@ class MeneameScraper:
             news_body = news_summary.find(class_="news-body")
 
             # Extraer data-link-id
-            news_id = news_body.get("data-link-id")
+            news_id = int(news_body.get("data-link-id"))
 
             # Manejar posibles ausencias de news-shakeit
             news_shakeit = news_body.find_next(class_="news-shakeit")
             center_content = news_body.find_next(class_="center-content")
             title = center_content.find("h2").find("a").text.strip()
+            news_submitted = center_content.find("div", class_="news-submitted")
+            spans_with_data_ts= news_submitted.find_all("span", attrs={"data-ts": True})
+
+            # Extraer fecha de publicacion en formato timestamp
+            published_timestamp = int(spans_with_data_ts[-1].get("data-ts"))
+
+            # Extraer comentarios
+            news_details = news_body.find_next(class_="news-details")
+            comments = int(news_details.select_one("a.comments").get("data-comments-number"))
+
+            # Extraer votos positivos, anonimos y negativos
+            positives_votes = int(news_details.select_one("span.positive-vote-number").text)
+            anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text)
+            negatives_votes = int(news_details.select_one("span.negative-vote-number").text)
+
+            # Extraer karma
+            karma_number = int(news_details.select_one("span.karma-number").text)
+
+            # Extraer categoria
+            category = news_details.select_one("a.subname").text
 
             # Extraer clics
             clics_span = news_shakeit.find("span", id=f"clicks-number-{news_id}")
@@ -51,14 +76,23 @@ class MeneameScraper:
 
             # Extraer votos
             votes_a = news_shakeit.find("a", id=f"a-votes-{news_id} ga-event")
-            votes_number = int(votes_a.text.strip()) if votes_a else 0
+            meneos_number = int(votes_a.text.strip()) if votes_a else 0
 
-            results.append({
-                "title": title,
-                "id": news_id,
-                "clicks": clicks_number,
-                "votes": votes_number
-            })
+            results.append(
+                MeneameEntry(news_id,
+                             title,
+                             meneos_number,
+                             clicks_number,
+                             karma_number,
+                             positives_votes,
+                             anonymous_votes,
+                             negatives_votes,
+                             category,
+                             comments,
+                             published_timestamp,
+                             int(datetime.now().timestamp())
+                )
+            )
 
         return results
 
@@ -66,4 +100,9 @@ class MeneameScraper:
 # Ejemplo de prueba
 my_scraper = MeneameScraper()
 my_results = my_scraper.scrape("/top_visited")
+# Imprimir por consola, solo imprime lo que hayamos definido en el str o repr
+print("Listado")
 print(my_results)
+print("Listado en formato json")
+# Imprimir en formato json para comprobar todos los atributos
+print(json.dumps([result.__dict__ for result in my_results]))
