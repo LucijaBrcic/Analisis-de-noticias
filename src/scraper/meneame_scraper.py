@@ -1,36 +1,42 @@
-import json
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
 import requests
+import pandas as pd
+import time
+import random
 from bs4 import BeautifulSoup
 
 from src.model.meneame_entry import MeneameEntry
 
 
+@dataclass
 class MeneameScraper:
-    def __init__(self):
-        self.base_url = "https://www.meneame.net"
+    base_url: str = "https://www.meneame.net"
+    max_pages: int = 50
+    save_interval: int = 5
+    results: list[MeneameEntry]= field(default_factory=list)
 
-    def valid_suburls(self):
-        return ["/", "/queue", "/articles", "/popular", "/top_visited"]
-
-    def scrape(self, suburl_to_scrape) -> list[MeneameEntry]:
-        if suburl_to_scrape not in self.valid_suburls():
-            raise ValueError("Invalid URL")
-
-        # Include headers to avoid 403 error
+    def scrape_page(self, page_number):
+        """Scrapea una única página."""
+        url = f"{self.base_url}/?page={page_number}"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-        }
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
-        resp = requests.get(f"{self.base_url}{suburl_to_scrape}", headers=headers)
-        if resp.status_code != 200:
-            raise ValueError(f"Error scraping the page, status code: {resp.status_code}")
+        print(f"\n🟢 Scrapeando página {page_number}: {url}")
 
-        soup = BeautifulSoup(resp.text, "lxml")
+        response = requests.get(url, headers=headers)
+        print(f"🔍 Status code: {response.status_code}")
 
-        results = []
+        if response.status_code != 200:
+            print(f"❌ Error en {url}: {response.status_code}")
+            return []
 
+        soup = BeautifulSoup(response.text, "lxml")
+        return self.extract_news(soup)
+
+    def extract_news(self, soup) -> list[MeneameEntry]:
+        tmp_results = []
         # Obtener el elemento con id newswrap
         newswrap = soup.find(id="newswrap")
         if not newswrap:
@@ -78,7 +84,7 @@ class MeneameScraper:
             votes_a = news_shakeit.find("a", id=f"a-votes-{news_id} ga-event")
             meneos_number = int(votes_a.text.strip()) if votes_a else 0
 
-            results.append(
+            tmp_results.append(
                 MeneameEntry(news_id,
                              title,
                              meneos_number,
@@ -94,15 +100,56 @@ class MeneameScraper:
                 )
             )
 
-        return results
+        return tmp_results
 
+    def scrape_main_page(self):
+        """Itera por las páginas manualmente usando ?page=X."""
+        start_time = time.time()  # 🔴 Iniciar tiempo de ejecución
+
+        for page in range(1, self.max_pages + 1):
+            try:
+                new_data = self.scrape_page(page)
+                self.results.extend(new_data)
+
+                # Guardar cada X páginas
+                if page % self.save_interval == 0:
+                    self.save_temp_data(page)
+
+                # Espera entre 4 y 10 segundos para evitar detección
+                sleep_time = random.uniform(5, 10)
+                print(f"⏳ Esperando {sleep_time:.2f} segundos antes de la siguiente página...")
+                time.sleep(sleep_time)
+
+            except Exception as e:
+                print(f"⚠️ Error en la página {page}: {e}")
+                continue
+
+        # Guardar los datos finales
+        self.save_final_data()
+
+        # 🔴 Finalizar tiempo de ejecución
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+        print(f"🏁 Scraping finalizado en {minutes}m {seconds}s.")
+
+    def save_temp_data(self, page):
+        """Guarda datos temporalmente cada X páginas."""
+        df_temp = pd.DataFrame(self.results_as_dict_array)
+        df_temp.to_csv(f"meneame_scraped_temp_{page}.csv", index=False, encoding="utf-8")
+        print(f"📁 Datos guardados temporalmente en meneame_scraped_temp_{page}.csv")
+
+    def save_final_data(self):
+        """Guarda los datos finales en un CSV."""
+        df = pd.DataFrame(self.results_as_dict_array)
+        df.to_csv("meneame_scraped_final.csv", index=False, encoding="utf-8")
+        print("✅ Scraping finalizado. Datos guardados en meneame_scraped_final.csv")
+
+    @property
+    def results_as_dict_array(self):
+        return [asdict(x) for x in self.results]
 
 # Ejemplo de prueba
-my_scraper = MeneameScraper()
-my_results = my_scraper.scrape("/top_visited")
-# Imprimir por consola, solo imprime lo que hayamos definido en el str o repr
-print("Listado")
-print(my_results)
-print("Listado en formato json")
-# Imprimir en formato json para comprobar todos los atributos
-print(json.dumps([result.__dict__ for result in my_results]))
+my_scraper = MeneameScraper(max_pages=22, save_interval=5)
+my_scraper.scrape_main_page()
