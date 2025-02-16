@@ -228,4 +228,7 @@ pip-selfcheck.json
 # IntellijIdea
 .idea/**
 
+# .DS_Store
+.DS_Store
+
 # End of https://www.toptal.com/developers/gitignore/api/python,virtualenv,visualstudiocode,intellij
