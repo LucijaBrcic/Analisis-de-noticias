@@ -5,6 +5,8 @@
   - csv (alojaran ficheros csv)
   - model (alojaran ficheros que representas clases)
   - scraper (alojara codigo relacionado con el scraper)
+  - streamlit_web (ficheros relacionados con la web hecha en streamlit)
+    - app.py (punto de entrada de la web)
 - requirements.txt (fichero de dependencias)
 - .gitignore (fichero donde se listan ficheros a ignorar en git)
 - README.md (fichero README de instrucciones)
@@ -37,6 +39,9 @@ instalar python3-venv (si no lo tuvieramos) (depende de cada sistema operativo)
 Este comando instala todas las dependencias incluidas en el fichero requirements.txt
 
 `pip install -r requirements.txt`
+
+### Ejecutar Web
+`streamlit run src/streamlit_web/app.py`
 
 ### Autores
 - Lucia
