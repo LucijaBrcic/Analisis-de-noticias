@@ -49,54 +49,63 @@ class MeneameScraper:
         if not newswrap:
             print("⚠️ No se encontró 'newswrap'. Saltando página.")
             return []
-
+    
         results = []
         news_summaries = newswrap.find_all(class_="news-summary")
         print(f"✅ Noticias encontradas: {len(news_summaries)}")
-
-        for news_summary in newswrap.find_all(class_="news-summary"):
-            news_body = news_summary.find(class_="news-body")
-            if not news_body:
-                continue
-
-            news_id = int(news_body.get("data-link-id"))
-            center_content = news_body.find_next(class_="center-content")
-            title = center_content.find("h2").find("a").text.strip()
-            source_link = center_content.find("h2").find("a")["href"]
-
-            content_div = news_body.find("div", class_="news-content")
-            content = content_div.text.strip() if content_div else ""
-
-            news_submitted = center_content.find("div", class_="news-submitted")
-            published_timestamp = int(news_submitted.find_all("span", attrs={"data-ts": True})[-1].get("data-ts"))
-            published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S")
-
-            author_link = news_submitted.find("a", href=re.compile("/user/.+/history"))
-            author = author_link.text.strip() if author_link else "Desconocido"
-
-            source_span = news_submitted.find("span", class_="showmytitle")
-            source = source_span.text.strip() if source_span else "Desconocido"
-
-            news_details = news_body.find_next(class_="news-details")
-            comments = int(news_details.select_one("a.comments").get("data-comments-number"))
-            positive_votes = int(news_details.select_one("span.positive-vote-number").text)
-            anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text)
-            negative_votes = int(news_details.select_one("span.negative-vote-number").text)
-            karma = int(news_details.select_one("span.karma-number").text)
-            category = news_details.select_one("a.subname").text.strip()
-
-            clicks_span = news_body.find("span", id=f"clicks-number-{news_id}")
-            clicks = int(clicks_span.text.strip()) if clicks_span else 0
-            votes_a = news_body.find("a", id=f"a-votes-{news_id} ga-event")
-            meneos = int(votes_a.text.strip()) if votes_a else 0
-
-            scraped_date = datetime.now().strftime("%Y-%m-%d")
-            provincia, comunidad = self.detect_province_region(title)
-
-            results.append(MeneameEntry(
-                news_id, title, content, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes, category,
-                comments, published_date, author, source, source_link, provincia, comunidad, scraped_date
-            ))
+    
+        for news_summary in news_summaries:
+            try:
+                news_body = news_summary.find(class_="news-body")
+                if not news_body:
+                    continue
+    
+                news_id = int(news_body.get("data-link-id", 0))
+    
+                center_content = news_body.find_next(class_="center-content")
+                title_tag = center_content.find("h2").find("a") if center_content else None
+                title = title_tag.text.strip() if title_tag else "Título no disponible"
+    
+                source_link = title_tag["href"] if title_tag else "Desconocido"
+    
+                content_div = news_body.find("div", class_="news-content")
+                content = content_div.text.strip() if content_div else "Contenido no disponible"
+    
+                news_submitted = center_content.find("div", class_="news-submitted") if center_content else None
+                published_timestamp = int(news_submitted.find_all("span", attrs={"data-ts": True})[-1].get("data-ts", 0)) if news_submitted else 0
+                published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S") if published_timestamp else "Fecha no disponible"
+    
+                author_link = news_submitted.find("a", href=re.compile("/user/.+/history")) if news_submitted else None
+                author = author_link.text.strip() if author_link else "Desconocido"
+    
+                source_span = news_submitted.find("span", class_="showmytitle") if news_submitted else None
+                source = source_span.text.strip() if source_span else "Desconocido"
+    
+                news_details = news_body.find_next(class_="news-details")
+                comments = int(news_details.select_one("a.comments").get("data-comments-number", 0)) if news_details else 0
+                positive_votes = int(news_details.select_one("span.positive-vote-number").text) if news_details else 0
+                anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text) if news_details else 0
+                negative_votes = int(news_details.select_one("span.negative-vote-number").text) if news_details else 0
+                karma = int(news_details.select_one("span.karma-number").text) if news_details else 0
+                category = news_details.select_one("a.subname").text.strip() if news_details else "Desconocido"
+    
+                clicks_span = news_body.find("span", id=f"clicks-number-{news_id}")
+                clicks = int(clicks_span.text.strip()) if clicks_span else 0
+    
+                votes_a = news_body.find("a", id=f"a-votes-{news_id} ga-event")
+                meneos = int(votes_a.text.strip()) if votes_a else 0
+    
+                scraped_date = datetime.now().strftime("%Y-%m-%d")
+                provincia, comunidad = self.detect_province_region(title)
+    
+                results.append(MeneameEntry(
+                    news_id, title, content, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes, category,
+                    comments, published_date, author, source, source_link, provincia, comunidad, scraped_date
+                ))
+    
+            except Exception as e:
+                print(f"⚠️ Error procesando noticia: {e}")
+    
         return results
 
     def detect_province_region(self, title):
@@ -105,11 +114,11 @@ class MeneameScraper:
                 return provincia, comunidad
         return "Desconocido", "Desconocido"
 
-    def scrape_main_page(self):
+    def scrape_main_page(self, start_page=1):
         """Itera por las páginas manualmente usando ?page=X."""
         start_time = time.time()  # 🔴 Iniciar tiempo de ejecución
 
-        for page in range(1, self.max_pages + 1):
+        for page in range(start_page, self.max_pages + 1):
             try:
                 new_data = self.scrape_page(page)
                 self.results.extend(new_data)
@@ -140,5 +149,10 @@ class MeneameScraper:
     def save_final_data(self):
         """Guarda los datos finales en un CSV."""
         df = pd.DataFrame([entry.to_dict() for entry in self.results])
-        df.to_csv("meneame_scraped_final.csv", index=False, encoding="utf-8")
-        print("✅ Datos guardados en meneame_scraped_final.csv")
+        df.to_csv("meneame_scraped_final_2.csv", index=False, encoding="utf-8")
+        print("✅ Datos guardados en meneame_scraped_final_2.csv")
+
+
+# Ejecutar el scraper
+# scraper = MeneameScraper(max_pages=12000, save_interval=100)
+# scraper.scrape_main_page(start_page=6194)
