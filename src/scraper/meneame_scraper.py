@@ -25,6 +25,7 @@ class MeneameScraper:
         self.max_pages = max_pages
         self.save_interval = save_interval
         self.results = []
+        self.failed_pages = []  # Lista para almacenar páginas con menos de 25 noticias
 
     def scrape_page(self, page_number):
         """Scrapea una única página."""
@@ -32,80 +33,85 @@ class MeneameScraper:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
         
         print(f"\n🟢 Scrapeando página {page_number}: {url}")
-
+    
         response = requests.get(url, headers=headers)
         print(f"🔍 Status code: {response.status_code}")
-
+    
         if response.status_code != 200:
             print(f"❌ Error en {url}: {response.status_code}")
             return []
-
+    
         soup = BeautifulSoup(response.text, "lxml")
-        return self.extract_news(soup)
+        return self.extract_news(soup, page_number)  # 🔴 Se pasa correctamente el número de página
 
-    def extract_news(self, soup):
+    def extract_news(self, soup, page_number):
         """Extrae información de las noticias de una página."""
         newswrap = soup.find(id="newswrap")
         if not newswrap:
-            print("⚠️ No se encontró 'newswrap'. Saltando página.")
+            print(f"⚠️ No se encontró 'newswrap' en la página {page_number}. Guardando página para revisión.")
+            self.failed_pages.append(page_number)
             return []
-    
-        results = []
+
         news_summaries = newswrap.find_all(class_="news-summary")
-        print(f"✅ Noticias encontradas: {len(news_summaries)}")
-    
+        print(f"✅ Noticias encontradas en página {page_number}: {len(news_summaries)}")
+
+        if len(news_summaries) < 25:
+            print(f"⚠️ Página {page_number} tiene menos de 25 noticias. Posible problema.")
+            self.failed_pages.append(page_number)
+
+        results = []
         for news_summary in news_summaries:
             try:
                 news_body = news_summary.find(class_="news-body")
                 if not news_body:
                     continue
-    
-                news_id = int(news_body.get("data-link-id", 0))
-    
+                
+                news_id = int(news_body.get("data-link-id"))
                 center_content = news_body.find_next(class_="center-content")
-                title_tag = center_content.find("h2").find("a") if center_content else None
-                title = title_tag.text.strip() if title_tag else "Título no disponible"
-    
-                source_link = title_tag["href"] if title_tag else "Desconocido"
-    
+                title = center_content.find("h2").find("a").text.strip()
+                source_link = center_content.find("h2").find("a")["href"]
+
                 content_div = news_body.find("div", class_="news-content")
-                content = content_div.text.strip() if content_div else "Contenido no disponible"
-    
-                news_submitted = center_content.find("div", class_="news-submitted") if center_content else None
-                published_timestamp = int(news_submitted.find_all("span", attrs={"data-ts": True})[-1].get("data-ts", 0)) if news_submitted else 0
-                published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S") if published_timestamp else "Fecha no disponible"
-    
-                author_link = news_submitted.find("a", href=re.compile("/user/.+/history")) if news_submitted else None
-                author = author_link.text.strip() if author_link else "Desconocido"
-    
-                source_span = news_submitted.find("span", class_="showmytitle") if news_submitted else None
+                content = content_div.text.strip() if content_div else ""
+
+                news_submitted = center_content.find("div", class_="news-submitted")
+                published_timestamp = int(news_submitted.find_all("span", attrs={"data-ts": True})[-1].get("data-ts"))
+                published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
+                user_link = news_submitted.find("a", href=re.compile("/user/.+/history"))
+                user = user_link.text.strip() if user_link else "Desconocido"
+
+                source_span = news_submitted.find("span", class_="showmytitle")
                 source = source_span.text.strip() if source_span else "Desconocido"
-    
+
                 news_details = news_body.find_next(class_="news-details")
-                comments = int(news_details.select_one("a.comments").get("data-comments-number", 0)) if news_details else 0
-                positive_votes = int(news_details.select_one("span.positive-vote-number").text) if news_details else 0
-                anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text) if news_details else 0
-                negative_votes = int(news_details.select_one("span.negative-vote-number").text) if news_details else 0
-                karma = int(news_details.select_one("span.karma-number").text) if news_details else 0
-                category = news_details.select_one("a.subname").text.strip() if news_details else "Desconocido"
-    
+                comments = int(news_details.select_one("a.comments").get("data-comments-number"))
+                positive_votes = int(news_details.select_one("span.positive-vote-number").text)
+                anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text)
+                negative_votes = int(news_details.select_one("span.negative-vote-number").text)
+                karma = int(news_details.select_one("span.karma-number").text)
+                category = news_details.select_one("a.subname").text.strip()
+
                 clicks_span = news_body.find("span", id=f"clicks-number-{news_id}")
                 clicks = int(clicks_span.text.strip()) if clicks_span else 0
-    
                 votes_a = news_body.find("a", id=f"a-votes-{news_id} ga-event")
                 meneos = int(votes_a.text.strip()) if votes_a else 0
-    
+
+                story_link = news_summary.find("a", href=re.compile("^/story/"))
+                full_story_link = f"{self.base_url}{story_link['href']}" if story_link else "Desconocido"
+
                 scraped_date = datetime.now().strftime("%Y-%m-%d")
                 provincia, comunidad = self.detect_province_region(title)
-    
+
                 results.append(MeneameEntry(
-                    news_id, title, content, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes, category,
-                    comments, published_date, author, source, source_link, provincia, comunidad, scraped_date
+                    news_id, title, content, full_story_link, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes,
+                    category, comments, published_date, user, source, source_link, provincia, comunidad, scraped_date
                 ))
-    
             except Exception as e:
-                print(f"⚠️ Error procesando noticia: {e}")
-    
+                print(f"⚠️ Error procesando noticia en página {page_number}: {e}. Continuando con la siguiente noticia.")
+                self.failed_pages.append(page_number)
+                continue
+        
         return results
 
     def detect_province_region(self, title):
@@ -127,8 +133,8 @@ class MeneameScraper:
                 if page % self.save_interval == 0:
                     self.save_temp_data(page)
 
-                # Espera entre 5 y 10 segundos para evitar detección
-                sleep_time = random.uniform(4, 6)
+                # Espera entre 1 y 2 segundos para evitar detección
+                sleep_time = random.uniform(1, 2)
                 print(f"⏳ Esperando {sleep_time:.2f} segundos antes de la siguiente página...")
                 time.sleep(sleep_time)
 
@@ -137,6 +143,7 @@ class MeneameScraper:
                 break
 
         self.save_final_data()
+        self.save_failed_pages()  # Guardar páginas con errores
         elapsed_time = time.time() - start_time
         print(f"🏁 Scraping finalizado en {elapsed_time:.2f} segundos.")
         
@@ -151,6 +158,15 @@ class MeneameScraper:
         df = pd.DataFrame([entry.to_dict() for entry in self.results])
         df.to_csv("meneame_scraped_final_2.csv", index=False, encoding="utf-8")
         print("✅ Datos guardados en meneame_scraped_final_2.csv")
+
+    def save_failed_pages(self):
+        """Guarda en un archivo CSV las páginas que tuvieron menos de 25 noticias o errores."""
+        if self.failed_pages:
+            df_failed = pd.DataFrame({"failed_pages": self.failed_pages})
+            df_failed.to_csv("meneame_failed_pages.csv", index=False, encoding="utf-8")
+            print(f"⚠️ Páginas problemáticas guardadas en meneame_failed_pages.csv")
+        else:
+            print("✅ No se detectaron páginas problemáticas.")
 
 
 # Ejecutar el scraper

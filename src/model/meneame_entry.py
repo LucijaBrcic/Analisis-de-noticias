@@ -1,9 +1,10 @@
 class MeneameEntry:
-    def __init__(self, news_id, title, content, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes, category, 
-                 comments, published_date, author, source, source_link, provincia, comunidad, scraped_date):
+    def __init__(self, news_id, title, content, full_story_link, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes,
+                 category, comments, published_date, user, source, source_link, provincia, comunidad, scraped_date):
         self.news_id = news_id
         self.title = title
         self.content = content
+        self.full_story_link = full_story_link
         self.meneos = meneos
         self.clicks = clicks
         self.karma = karma
@@ -13,7 +14,7 @@ class MeneameEntry:
         self.category = category
         self.comments = comments
         self.published_date = published_date
-        self.author = author
+        self.user = user
         self.source = source
         self.source_link = source_link
         self.provincia = provincia
