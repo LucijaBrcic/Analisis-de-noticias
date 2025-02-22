@@ -8,7 +8,7 @@ sns.set_style("whitegrid")
 
 # Configurar la conexión a MySQL con SQLAlchemy y mysql-connector
 DB_USER = "root"
-DB_PASSWORD = "password" # reemplaza tu password
+DB_PASSWORD = "Luis_1234_borras"  # Reemplaza con tu password
 DB_HOST = "localhost"
 DB_NAME = "meneame"
 
@@ -17,101 +17,90 @@ DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NA
 # Crear el motor de conexión con SQLAlchemy
 engine = create_engine(DATABASE_URL)
 
-# Definir las consultas SQL
-queries = {
-    "karma_clicks_comunidad": """
-        SELECT l.comunidad, AVG(ni.karma) AS avg_karma, AVG(ni.clicks) AS avg_clicks
-        FROM news_info_table ni
-        JOIN location_table l ON ni.provincia_id = l.provincia_id
-        WHERE ni.karma IS NOT NULL AND ni.clicks IS NOT NULL
-        GROUP BY l.comunidad
-        ORDER BY avg_clicks DESC;
-    """,
-    "clicks_comentarios_comunidad": """
-        SELECT l.comunidad, AVG(ni.clicks) AS avg_clicks, AVG(ni.comments) AS avg_comments
-        FROM news_info_table ni
-        JOIN location_table l ON ni.provincia_id = l.provincia_id
-        WHERE ni.clicks IS NOT NULL AND ni.comments IS NOT NULL
-        GROUP BY l.comunidad
-        ORDER BY avg_clicks DESC;
-    """,
-    "karma_clicks_provincia": """
-        SELECT l.provincia, AVG(ni.karma) AS avg_karma, AVG(ni.clicks) AS avg_clicks
-        FROM news_info_table ni
-        JOIN location_table l ON ni.provincia_id = l.provincia_id
-        WHERE ni.karma IS NOT NULL AND ni.clicks IS NOT NULL
-        GROUP BY l.provincia
-        ORDER BY avg_clicks DESC;
-    """,
-    "clicks_comentarios_provincia": """
-        SELECT l.provincia, AVG(ni.clicks) AS avg_clicks, AVG(ni.comments) AS avg_comments
-        FROM news_info_table ni
-        JOIN location_table l ON ni.provincia_id = l.provincia_id
-        WHERE ni.clicks IS NOT NULL AND ni.comments IS NOT NULL
-        GROUP BY l.provincia
-        ORDER BY avg_clicks DESC;
-    """,
-    "karma_clicks_categoria": """
-        SELECT c.category, (AVG(ni.clicks) / NULLIF(AVG(ni.karma), 0)) AS click_karma_ratio
-        FROM news_info_table ni
-        JOIN category_table c ON ni.category_id = c.category_id
-        WHERE ni.karma IS NOT NULL AND ni.clicks IS NOT NULL
-        GROUP BY c.category
-        ORDER BY click_karma_ratio ASC
-        LIMIT 10;
-    """,
-    "clicks_comentarios_categoria": """
-        SELECT c.category, (AVG(ni.clicks) / NULLIF(AVG(ni.comments), 0)) AS click_comment_ratio
-        FROM news_info_table ni
-        JOIN category_table c ON ni.category_id = c.category_id
-        WHERE ni.clicks IS NOT NULL AND ni.comments IS NOT NULL
-        GROUP BY c.category
-        ORDER BY click_comment_ratio ASC
-        LIMIT 10;
-    """,
-}
+# Consulta SQL para obtener datos agrupados por provincia, comunidad y categoría
+query = """
+    SELECT l.provincia AS segment, l.comunidad AS community, c.category AS category, 
+           AVG(ni.karma) AS avg_karma, AVG(ni.clicks) AS avg_clicks, AVG(ni.comments) AS avg_comments
+    FROM news_info_table ni
+    JOIN location_table l ON ni.provincia_id = l.provincia_id
+    JOIN category_table c ON c.category_id = ni.category_id
+    WHERE 
+          ni.karma IS NOT NULL 
+          AND ni.clicks IS NOT NULL 
+          AND ni.comments IS NOT NULL
+    GROUP BY l.provincia, l.comunidad, ni.category_id;
+"""
 
-# Crear gráficos
-fig, axes = plt.subplots(3, 2, figsize=(15, 12))  # 3 filas, 2 columnas
-axes = axes.flatten()  # Convertir en lista para fácil acceso
+# Obtener datos y guardarlos en un DataFrame
+df = pd.read_sql(query, engine)
 
-# Nombres de gráficos
-titles = [
-    "Relación Karma vs Clicks por Comunidad",
-    "Relación Clicks vs Comentarios por Comunidad",
-    "Relación Karma vs Clicks por Provincia",
-    "Relación Clicks vs Comentarios por Provincia",
-    "Clicks Necesarios por punto de Karma por Categoría",
-    "Clicks Necesarios por Comentario por Categoría"
-]
+# Verificar si hay datos
+if df.empty:
+    print("No hay datos disponibles.")
+else:
+    # Crear figura con seis subgráficos
+    fig, axes = plt.subplots(2, 3, figsize=(30, 12))
 
-# Iterar sobre cada consulta y graficarla
-for i, (key, query) in enumerate(queries.items()):
-    # Obtener datos de MySQL y guardarlos en un DataFrame de pandas
-    df = pd.read_sql(query, engine)
+    # Gráfico 1: Relación Clicks vs Karma por Provincia
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_karma", hue="segment", palette="viridis", s=100, alpha=0.8, ax=axes[0, 0]
+    )
+    axes[0, 0].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[0, 0].set_ylabel("Promedio Karma", fontsize=12)
+    axes[0, 0].set_title("Clicks vs Karma por Provincia", fontsize=14)
+    axes[0, 0].legend(title="Provincia")
 
-    # Extraer nombres de columnas
-    x_column = df.columns[0]  # Nombre de la columna de agrupación (Comunidad, Provincia o Categoría)
-    y_columns = df.columns[1:]  # Columnas de métricas
+    # Gráfico 2: Relación Clicks vs Comentarios por Provincia
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_comments", hue="segment", palette="plasma", s=100, alpha=0.8, ax=axes[0, 1]
+    )
+    axes[0, 1].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[0, 1].set_ylabel("Promedio Comentarios", fontsize=12)
+    axes[0, 1].set_title("Clicks vs Comentarios por Provincia", fontsize=14)
+    axes[0, 1].legend(title="Provincia")
 
-    # Graficar en el subplot correspondiente
-    ax = axes[i]
-    if len(y_columns) == 2:
-        df.plot(x=x_column, y=y_columns.tolist(), kind="bar", ax=ax, width=0.8)
-        ax.legend(["Promedio " + y_columns[0], "Promedio " + y_columns[1]])
-    else:
-        df.plot(x=x_column, y=y_columns[0], kind="bar", ax=ax, color='b', width=0.8)
-        ax.legend(["Promedio " + y_columns[0]])
+    # Gráfico 3: Relación Clicks vs Karma por Comunidad
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_karma", hue="community", palette="coolwarm", s=100, alpha=0.8, ax=axes[0, 2]
+    )
+    axes[0, 2].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[0, 2].set_ylabel("Promedio Karma", fontsize=12)
+    axes[0, 2].set_title("Clicks vs Karma por Comunidad", fontsize=14)
+    axes[0, 2].legend(title="Comunidad")
 
-    # Personalización del gráfico
-    ax.set_title(titles[i], fontsize=12)
-    ax.set_xlabel(x_column, fontsize=10)
-    ax.set_ylabel("Promedio", fontsize=10)
-    ax.tick_params(axis='x', rotation=90)  # Rotar etiquetas en el eje X para mejor visualización
+    # Gráfico 4: Relación Clicks vs Comentarios por Comunidad
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_comments", hue="community", palette="magma", s=100, alpha=0.8, ax=axes[1, 0]
+    )
+    axes[1, 0].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[1, 0].set_ylabel("Promedio Comentarios", fontsize=12)
+    axes[1, 0].set_title("Clicks vs Comentarios por Comunidad", fontsize=14)
+    axes[1, 0].legend(title="Comunidad")
 
-# Ajustar diseño y mostrar gráficos
-plt.tight_layout()
-plt.savefig("graphs.png", dpi=300, bbox_inches="tight")
+    # Gráfico 5: Relación Clicks vs Karma por Categoría
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_karma", hue="category", palette="cubehelix", s=100, alpha=0.8, ax=axes[1, 1]
+    )
+    axes[1, 1].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[1, 1].set_ylabel("Promedio Karma", fontsize=12)
+    axes[1, 1].set_title("Clicks vs Karma por Categoría", fontsize=14)
+    axes[1, 1].legend(title="Categoría")
+
+    # Gráfico 6: Relación Clicks vs Comentarios por Categoría
+    sns.scatterplot(
+        data=df, x="avg_clicks", y="avg_comments", hue="category", palette="Set2", s=100, alpha=0.8, ax=axes[1, 2]
+    )
+    axes[1, 2].set_xlabel("Promedio Clicks", fontsize=12)
+    axes[1, 2].set_ylabel("Promedio Comentarios", fontsize=12)
+    axes[1, 2].set_title("Clicks vs Comentarios por Categoría", fontsize=14)
+    axes[1, 2].legend(title="Categoría")
+
+    # Ajustar diseño
+    plt.tight_layout()
+
+    plt.savefig("graphs.png", dpi=300, bbox_inches="tight")
+
+    plt.show()
 
 # Cerrar la conexión al motor SQLAlchemy
 engine.dispose()
