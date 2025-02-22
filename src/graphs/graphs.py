@@ -8,7 +8,7 @@ sns.set_style("whitegrid")
 
 # Configurar la conexión a MySQL con SQLAlchemy y mysql-connector
 DB_USER = "root"
-DB_PASSWORD = "password" # reemplaza tu password
+DB_PASSWORD = "Luis_1234_borras" # reemplaza tu password
 DB_HOST = "localhost"
 DB_NAME = "meneame"
 
@@ -52,21 +52,23 @@ queries = {
         ORDER BY avg_clicks DESC;
     """,
     "karma_clicks_categoria": """
-        SELECT c.category, AVG(ni.karma) AS avg_karma, AVG(ni.clicks) AS avg_clicks
+        SELECT c.category, (AVG(ni.clicks) / NULLIF(AVG(ni.karma), 0)) AS click_karma_ratio
         FROM news_info_table ni
         JOIN category_table c ON ni.category_id = c.category_id
         WHERE ni.karma IS NOT NULL AND ni.clicks IS NOT NULL
         GROUP BY c.category
-        ORDER BY avg_clicks DESC;
+        ORDER BY click_karma_ratio ASC
+        LIMIT 10;
     """,
     "clicks_comentarios_categoria": """
-        SELECT c.category, AVG(ni.clicks) AS avg_clicks, AVG(ni.comments) AS avg_comments
+        SELECT c.category, (AVG(ni.clicks) / NULLIF(AVG(ni.comments), 0)) AS click_comment_ratio
         FROM news_info_table ni
         JOIN category_table c ON ni.category_id = c.category_id
         WHERE ni.clicks IS NOT NULL AND ni.comments IS NOT NULL
         GROUP BY c.category
-        ORDER BY avg_clicks DESC;
-    """
+        ORDER BY click_comment_ratio ASC
+        LIMIT 10;
+    """,
 }
 
 # Crear gráficos
@@ -79,8 +81,8 @@ titles = [
     "Relación Clicks vs Comentarios por Comunidad",
     "Relación Karma vs Clicks por Provincia",
     "Relación Clicks vs Comentarios por Provincia",
-    "Relación Karma vs Clicks por Categoría",
-    "Relación Clicks vs Comentarios por Categoría"
+    "Clicks Necesarios por punto de Karma por Categoría",
+    "Clicks Necesarios por Comentario por Categoría"
 ]
 
 # Iterar sobre cada consulta y graficarla
@@ -90,18 +92,21 @@ for i, (key, query) in enumerate(queries.items()):
 
     # Extraer nombres de columnas
     x_column = df.columns[0]  # Nombre de la columna de agrupación (Comunidad, Provincia o Categoría)
-    y1_column = df.columns[1]  # Primera métrica (karma o clicks)
-    y2_column = df.columns[2]  # Segunda métrica (clicks o comentarios)
+    y_columns = df.columns[1:]  # Columnas de métricas
 
     # Graficar en el subplot correspondiente
     ax = axes[i]
-    df.plot(x=x_column, y=[y1_column, y2_column], kind="bar", ax=ax, width=0.8)
+    if len(y_columns) == 2:
+        df.plot(x=x_column, y=y_columns.tolist(), kind="bar", ax=ax, width=0.8)
+        ax.legend(["Promedio " + y_columns[0], "Promedio " + y_columns[1]])
+    else:
+        df.plot(x=x_column, y=y_columns[0], kind="bar", ax=ax, color='b', width=0.8)
+        ax.legend(["Promedio " + y_columns[0]])
 
     # Personalización del gráfico
     ax.set_title(titles[i], fontsize=12)
     ax.set_xlabel(x_column, fontsize=10)
     ax.set_ylabel("Promedio", fontsize=10)
-    ax.legend(["Promedio " + y1_column, "Promedio " + y2_column])
     ax.tick_params(axis='x', rotation=90)  # Rotar etiquetas en el eje X para mejor visualización
 
 # Ajustar diseño y mostrar gráficos
