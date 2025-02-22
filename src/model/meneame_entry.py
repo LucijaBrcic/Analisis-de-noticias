@@ -1,6 +1,6 @@
 class MeneameEntry:
     def __init__(self, news_id, title, content, full_story_link, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes,
-                 category, comments, published_date, user, source, source_link, provincia, comunidad, scraped_date):
+                 category, comments, published_date, user, source, source_link, scraped_date):
         self.news_id = news_id
         self.title = title
         self.content = content
@@ -17,8 +17,6 @@ class MeneameEntry:
         self.user = user
         self.source = source
         self.source_link = source_link
-        self.provincia = provincia
-        self.comunidad = comunidad
         self.scraped_date = scraped_date
 
     def to_dict(self):

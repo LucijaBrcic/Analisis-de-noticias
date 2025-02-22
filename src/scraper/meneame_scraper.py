@@ -8,24 +8,13 @@ import re
 
 from src.model.meneame_entry import MeneameEntry
 
-# Diccionario de provincias y comunidades autónomas de España
-PROVINCIAS_COMUNIDADES = {
-    "Madrid": "Comunidad de Madrid", "Barcelona": "Cataluña", "Valencia": "Comunidad Valenciana", "Sevilla": "Andalucía",
-    "Zaragoza": "Aragón", "Málaga": "Andalucía", "Murcia": "Región de Murcia", "Palma": "Islas Baleares",
-    "Las Palmas": "Canarias", "Bilbao": "País Vasco", "Alicante": "Comunidad Valenciana", "Córdoba": "Andalucía",
-    "Valladolid": "Castilla y León", "Vigo": "Galicia", "Gijón": "Asturias", "Hospitalet": "Cataluña",
-    "La Coruña": "Galicia", "Granada": "Andalucía", "Vitoria": "País Vasco", "Elche": "Comunidad Valenciana",
-    "Oviedo": "Asturias", "Santa Cruz de Tenerife": "Canarias", "Badalona": "Cataluña", "Cartagena": "Murcia"
-}
-
-
 class MeneameScraper:
     def __init__(self, max_pages=50, save_interval=5):
         self.base_url = "https://meneame.net"
         self.max_pages = max_pages
         self.save_interval = save_interval
         self.results = []
-        self.failed_pages = []  # Lista para almacenar páginas con menos de 25 noticias
+        self.failed_pages = []  # Lista para almacenar páginas con errores
 
     def scrape_page(self, page_number):
         """Scrapea una única página."""
@@ -42,7 +31,7 @@ class MeneameScraper:
             return []
     
         soup = BeautifulSoup(response.text, "lxml")
-        return self.extract_news(soup, page_number)  # 🔴 Se pasa correctamente el número de página
+        return self.extract_news(soup, page_number)
 
     def extract_news(self, soup, page_number):
         """Extrae información de las noticias de una página."""
@@ -101,11 +90,10 @@ class MeneameScraper:
                 full_story_link = f"{self.base_url}{story_link['href']}" if story_link else "Desconocido"
 
                 scraped_date = datetime.now().strftime("%Y-%m-%d")
-                provincia, comunidad = self.detect_province_region(title)
 
                 results.append(MeneameEntry(
                     news_id, title, content, full_story_link, meneos, clicks, karma, positive_votes, anonymous_votes, negative_votes,
-                    category, comments, published_date, user, source, source_link, provincia, comunidad, scraped_date
+                    category, comments, published_date, user, source, source_link, scraped_date
                 ))
             except Exception as e:
                 print(f"⚠️ Error procesando noticia en página {page_number}: {e}. Continuando con la siguiente noticia.")
@@ -114,22 +102,15 @@ class MeneameScraper:
         
         return results
 
-    def detect_province_region(self, title):
-        for provincia, comunidad in PROVINCIAS_COMUNIDADES.items():
-            if provincia.lower() in title.lower():
-                return provincia, comunidad
-        return "Desconocido", "Desconocido"
-
     def scrape_main_page(self, start_page=1):
         """Itera por las páginas manualmente usando ?page=X."""
-        start_time = time.time()  # 🔴 Iniciar tiempo de ejecución
+        start_time = time.time()
 
         for page in range(start_page, self.max_pages + 1):
             try:
                 new_data = self.scrape_page(page)
                 self.results.extend(new_data)
 
-                # Guardar cada X páginas
                 if page % self.save_interval == 0:
                     self.save_temp_data(page)
 
@@ -143,7 +124,7 @@ class MeneameScraper:
                 break
 
         self.save_final_data()
-        self.save_failed_pages()  # Guardar páginas con errores
+        self.save_failed_pages()  # Guardamos páginas con errores
         elapsed_time = time.time() - start_time
         print(f"🏁 Scraping finalizado en {elapsed_time:.2f} segundos.")
         
@@ -156,8 +137,8 @@ class MeneameScraper:
     def save_final_data(self):
         """Guarda los datos finales en un CSV."""
         df = pd.DataFrame([entry.to_dict() for entry in self.results])
-        df.to_csv("meneame_scraped_final_2.csv", index=False, encoding="utf-8")
-        print("✅ Datos guardados en meneame_scraped_final_2.csv")
+        df.to_csv("meneame_scraped_final.csv", index=False, encoding="utf-8")
+        print("✅ Datos guardados en meneame_scraped_final.csv")
 
     def save_failed_pages(self):
         """Guarda en un archivo CSV las páginas que tuvieron menos de 25 noticias o errores."""
@@ -169,6 +150,6 @@ class MeneameScraper:
             print("✅ No se detectaron páginas problemáticas.")
 
 
-# Ejecutar el scraper
+# Ejemplo para ejecutar el scraper
 # scraper = MeneameScraper(max_pages=12000, save_interval=100)
 # scraper.scrape_main_page(start_page=6194)
