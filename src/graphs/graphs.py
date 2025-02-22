@@ -8,7 +8,7 @@ sns.set_style("whitegrid")
 
 # Configurar la conexión a MySQL con SQLAlchemy y mysql-connector
 DB_USER = "root"
-DB_PASSWORD = "Luis_1234_borras" # reemplaza tu password
+DB_PASSWORD = "password" # reemplaza tu password
 DB_HOST = "localhost"
 DB_NAME = "meneame"
 
