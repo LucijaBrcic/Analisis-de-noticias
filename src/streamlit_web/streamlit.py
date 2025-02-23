@@ -99,7 +99,7 @@ def data_presentation():
         
         st.pyplot(fig2)
         
-    # GRAFICO 3: Segmentado por comunidad Clicks vs. Karma y Clicks vs. Comentarios.
+    #GRAFICO 3: Segmentado por comunidad Clicks vs. Karma y Clicks vs. Comentarios.
         
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por comunidad")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por comunidad.")
