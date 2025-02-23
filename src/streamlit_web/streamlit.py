@@ -26,6 +26,7 @@ def data_presentation():
     data_option = st.sidebar.radio("Selecciona la sección de datos:", 
                                    ("Gráficos: Clicks vs Karma y Comentarios", "Otra sección"), key="data_section")
     
+    
     if data_option == "Gráficos: Clicks vs Karma y Comentarios":
 
         user = "root"
@@ -170,7 +171,7 @@ def detailed_view():
     st.write("Busca y compara inmuebles.")
     # Aquí podrías incluir formularios de búsqueda y comparación.
 
-#Menú principal en la barra lateral 
+#Menú principal en la barra lateral en 3 parte "Pagina Principal, Presentación de datos, Vista detallada".
 
 st.sidebar.title("Navegación")
 opcion = st.sidebar.radio("Selecciona una vista:", 
