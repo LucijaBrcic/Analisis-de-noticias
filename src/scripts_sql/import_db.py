@@ -1,14 +1,18 @@
 import pandas as pd
 import mysql.connector
 
-# este fichero deberia ser la union del 1,2,3 de la carpeta csvs...
+#Este fichero deberia ser la union del 1,2,3 de la carpeta csvs...
+
 df = pd.read_csv("meneame_scraped_final.csv")
 df.head()
+
+#Quitar duplicados y mostrar con la función.
 
 df = df.drop_duplicates()
 df = df.dropna()
 df.shape
 
+#Conector SQL.
 
 conn = mysql.connector.connect(
     host="localhost",
@@ -18,13 +22,15 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
-# Cargar el CSV
-# df = pd.read_csv("meneame_scraped_final.csv", encoding="utf-8")
+#Cargar el CSV
+#df = pd.read_csv("meneame_scraped_final.csv", encoding="utf-8")
 
-# Insertar datos en la base de datos
+#Insertar datos en la base de datos
+
 for _, row in df.iterrows():
     try:
         # 🔹 Insertar categoría si no existe
+        
         cursor.execute("SELECT category_id FROM category_table WHERE category = %s", (row["category"],))
         category_result = cursor.fetchone()
         if category_result:
@@ -35,6 +41,7 @@ for _, row in df.iterrows():
             category_id = cursor.lastrowid
 
         # 🔹 Insertar usuario si no existe
+        
         cursor.execute("SELECT user_id FROM user_table WHERE user = %s", (row["user"],))
         user_result = cursor.fetchone()
         if user_result:
@@ -44,7 +51,8 @@ for _, row in df.iterrows():
             conn.commit()
             user_id = cursor.lastrowid
 
-        # 🔹 Insertar fuente si no existe
+        # 🔹 Insertar fuente si no existe, hacemos la verificación "source" en la tabla dentro de la base de datos.
+        
         cursor.execute("SELECT source_id FROM source_table WHERE source = %s", (row["source"],))
         source_result = cursor.fetchone()
         if source_result:
@@ -54,7 +62,8 @@ for _, row in df.iterrows():
             conn.commit()
             source_id = cursor.lastrowid
 
-        # 🔹 Insertar provincia si no existe
+        # 🔹 Insertar provincia si no existe, aseguramos que "provincia y comunidad existe" con la función cursor executive().
+        
         cursor.execute("SELECT provincia_id FROM location_table WHERE provincia = %s", (row["provincia"],))
         provincia_result = cursor.fetchone()
         if provincia_result:
@@ -65,7 +74,8 @@ for _, row in df.iterrows():
             conn.commit()
             provincia_id = cursor.lastrowid
 
-        # 🔹 Insertar noticia en la tabla principal
+        # 🔹 Insertar noticia en la tabla principal con la función cursor.executive().
+        
         cursor.execute("""
             INSERT INTO news_info_table 
             (news_id, title, full_story_link, content, category_id, meneos, clicks, karma, positive_votes, 
@@ -80,12 +90,14 @@ for _, row in df.iterrows():
         ))
 
         # Confirmar cambios
+        
         conn.commit()
 
     except Exception as e:
         print(f"❌ Error insertando noticia {row['news_id']}: {e}")
 
-# Cerrar conexión
+#Cerrar conexión
+
 cursor.close()
 conn.close()
 print("✅ Base de datos poblada exitosamente.")
