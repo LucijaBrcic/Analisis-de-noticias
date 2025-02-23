@@ -97,7 +97,7 @@ else:
     axes[1, 1].set_ylabel("Promedio Karma", fontsize=12)
     axes[1, 1].set_title("Clicks vs Karma por Categoría", fontsize=14)
     axes[1, 1].legend(title="Categoría")
-
+    #Hlo que sea 
     # Gráfico 6: Relación Clicks vs Comentarios por Categoría
     
     sns.scatterplot(
