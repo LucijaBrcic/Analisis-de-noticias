@@ -6,9 +6,11 @@ import seaborn as sns
 import math
 
 # Configurar la página en modo "wide" mejorando tanto en dato como en gráficos la visualización en streamlit.
+
 st.set_page_config(layout="wide")
 
 # Página principal (Landing Page)
+
 def landing_page():
     st.title("Página Principal")
     st.write("Bienvenido a la aplicación.")
@@ -67,7 +69,7 @@ def data_presentation():
         
         st.pyplot(fig1)
         
-    #GRAFICO 2: Segmentado por provincia 
+    #GRAFICO 2: Segmentado por provincia Clicks vs. Comentarios por provincia.
         
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por provincia")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por provincia.")
