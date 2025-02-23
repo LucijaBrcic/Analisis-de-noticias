@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-fffffss
-# Configurar la página en modo "wide"
+
+# Configurar la página en modo "wide" mejorando tanto en dato como en gráficos la visualización en streamlit.
 st.set_page_config(layout="wide")
 
 # Página principal (Landing Page)
@@ -13,12 +13,14 @@ def landing_page():
     st.title("Página Principal")
     st.write("Bienvenido a la aplicación.")
 
-# Presentación de Datos con subnavegación
+#Presentación de Datos con subnavegación, mostrando en varias partes, también mapas Dashboard y demás gráficos.
+
 def data_presentation():
     st.title("Presentación de Datos")
     st.write("Aquí se muestran filtros, mapas, dashboard y otros gráficos.")
     
-    # Subnavegación dentro de 'Presentación de Datos'
+    #Subnavegación dentro de 'Presentación de Datos' mostrando Cliks vs. Karma y comentarios.
+    
     data_option = st.sidebar.radio("Selecciona la sección de datos:", 
                                    ("Gráficos: Clicks vs Karma y Comentarios", "Otra sección"), key="data_section")
     
@@ -28,6 +30,8 @@ def data_presentation():
         password = "password123"
         database = "meneame"
         engine = create_engine(f"mysql+pymysql://{user}:{password}@localhost/{database}")
+        
+     #Función para conectar con la base de datos SQL y pode así hacer la selección desde las tablas, haciendo un join con la localización_table, y category_table.
         
         def run_query(query):
             with engine.connect() as connection:
@@ -40,7 +44,8 @@ def data_presentation():
             JOIN category_table c ON c.category_id = ni.category_id;
         """)
         
-     # GRAFICO 1
+     #GRAFICO 1  Cliks vs Karma y Clicks vs. Comentarios.
+        
         st.subheader("Clicks vs. karma y Clicks vs. comentarios")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica.")
         
@@ -62,7 +67,8 @@ def data_presentation():
         
         st.pyplot(fig1)
         
-    #GRAFICO 2: Segmentado por provincia
+    #GRAFICO 2: Segmentado por provincia 
+        
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por provincia")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por provincia.")
         
@@ -91,7 +97,8 @@ def data_presentation():
         
         st.pyplot(fig2)
         
-    # GRAFICO 3: Segmentado por comunidad
+    # GRAFICO 3: Segmentado por comunidad Clicks vs. Karma y Clicks vs. Comentarios.
+        
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por comunidad")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por comunidad.")
         
@@ -120,7 +127,8 @@ def data_presentation():
         
         st.pyplot(fig3)
 
-    #GRAFICO 4
+    #GRAFICO 4 Cliks vs Karma y Cliks vs. y Cliks vs. Comentarios por Categoría.
+        
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por categoria")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por categoria.")
         
@@ -153,18 +161,21 @@ def data_presentation():
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
 
-# Vista Detallada
+#Vista Detallada en tres "Vista Detallada, Busca y compara inmuebles".
+
 def detailed_view():
     st.title("Vista Detallada")
     st.write("Busca y compara inmuebles.")
     # Aquí podrías incluir formularios de búsqueda y comparación.
 
-# Menú principal en la barra lateral
+#Menú principal en la barra lateral 
+
 st.sidebar.title("Navegación")
 opcion = st.sidebar.radio("Selecciona una vista:", 
                           ("Página Principal", "Presentación de Datos", "Vista Detallada"), key="main_nav")
 
-# Cargar la vista según la selección
+#Cargar la vista según la selección
+
 if opcion == "Página Principal":
     landing_page()
 elif opcion == "Presentación de Datos":
