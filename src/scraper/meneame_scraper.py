@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import re
 
-# Importa la clase MeneameEntry para estructurar los datos de las noticias
+#Importa la clase MeneameEntry para estructurar los datos de las noticias.
 from src.model.meneame_entry import MeneameEntry
 
 class MeneameScraper:
@@ -83,20 +83,20 @@ class MeneameScraper:
                 content_div = news_body.find("div", class_="news-content")
                 content = content_div.text.strip() if content_div else ""
 
-                # Fecha de publicación
+                #Fecha de publicación.
                 news_submitted = news_body.find("div", class_="news-submitted")
                 published_span = news_submitted.find("span", attrs={"data-ts": True})
                 published_timestamp = int(published_span["data-ts"]) if published_span else 0
                 published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
-                # Usuario y fuente
+                #Usuario y fuente.
                 user_tag = news_submitted.find("a", href=re.compile("/user/.+/history"))
                 user = user_tag.text.strip() if user_tag else "Desconocido"
                 
                 source_span = news_submitted.find("span", class_="showmytitle")
                 source = source_span.text.strip() if source_span else "Desconocido"
 
-                # Comentarios y votos
+                #Comentarios y votos.
                 news_details = news_body.find_next(class_="news-details")
                 comments = int(news_details.select_one("a.comments").get("data-comments-number", 0))
                 positive_votes = int(news_details.select_one("span.positive-vote-number").text)
