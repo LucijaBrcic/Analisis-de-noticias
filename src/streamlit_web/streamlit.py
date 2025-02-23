@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-
+fffffss
 # Configurar la página en modo "wide"
 st.set_page_config(layout="wide")
 
