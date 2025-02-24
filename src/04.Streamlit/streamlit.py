@@ -30,7 +30,7 @@ def data_presentation():
     if data_option == "Gráficos: Clicks vs Karma y Comentarios":
 
         user = "root"
-        password = "password123"
+        password = "password"
         database = "meneame"
         engine = create_engine(f"mysql+pymysql://{user}:{password}@localhost/{database}")
         
