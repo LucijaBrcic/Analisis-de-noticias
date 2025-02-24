@@ -9,6 +9,18 @@ import math
 
 st.set_page_config(layout="wide")
 
+
+user = "root"
+password = "password123"
+database = "meneame"
+engine = create_engine(f"mysql+pymysql://{user}:{password}@localhost/{database}")
+        
+#Función para conectar con la base de datos SQL y pode así hacer la selección desde las tablas, haciendo un join con la localización_table, y category_table.
+        
+def run_query(query):
+    with engine.connect() as connection:
+        return pd.read_sql(query, connection)
+    
 # Página principal (Landing Page)
 
 def landing_page():
@@ -29,16 +41,7 @@ def data_presentation():
     
     if data_option == "Gráficos: Clicks vs Karma y Comentarios":
 
-        user = "root"
-        password = "password"
-        database = "meneame"
-        engine = create_engine(f"mysql+pymysql://{user}:{password}@localhost/{database}")
-        
-     #Función para conectar con la base de datos SQL y pode así hacer la selección desde las tablas, haciendo un join con la localización_table, y category_table.
-        
-        def run_query(query):
-            with engine.connect() as connection:
-                return pd.read_sql(query, connection)
+
         
         karma_clicks_df = run_query("""
             SELECT l.comunidad, l.provincia, c.category, ni.karma, ni.clicks, ni.comments
