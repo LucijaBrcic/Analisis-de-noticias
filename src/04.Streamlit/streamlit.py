@@ -55,83 +55,81 @@ def data_presentation():
         st.subheader("Clicks vs. karma y Clicks vs. comentarios")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica.")
         
-        fig1, axes1 = plt.subplots(1, 2, figsize=(16,8))
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+        sns.scatterplot(data=karma_clicks_df, x="clicks", y="karma", alpha=0.5, ax=axes[0])
+        axes[0].set_xscale("log")
+        axes[0].set_yscale("log")
+        axes[0].set_xlabel("Clicks")
+        axes[0].set_ylabel("Karma")
+        axes[0].set_title("Scatter Plot: Clicks vs Karma")
+
+        sns.scatterplot(data=karma_clicks_df, x="clicks", y="comments", alpha=0.5, ax=axes[1])
+        axes[1].set_xscale("log")
+        axes[1].set_yscale("log")
+        axes[1].set_xlabel("Clicks")
+        axes[1].set_ylabel("Comments")
+        axes[1].set_title("Scatter Plot: Clicks vs Comments")
         
-        sns.scatterplot(data=karma_clicks_df, x="clicks", y="karma", alpha=0.5, ax=axes1[0])
-        axes1[0].set_xscale("log")
-        axes1[0].set_yscale("log")
-        axes1[0].set_xlabel("Clicks")
-        axes1[0].set_ylabel("Karma")
-        axes1[0].set_title("Scatter Plot: Clicks vs Karma", fontweight="bold")
-        
-        sns.scatterplot(data=karma_clicks_df, x="clicks", y="comments", alpha=0.5, ax=axes1[1])
-        axes1[1].set_xscale("log")
-        axes1[1].set_yscale("log")
-        axes1[1].set_xlabel("Clicks")
-        axes1[1].set_ylabel("Comments")
-        axes1[1].set_title("Scatter Plot: Clicks vs Comments", fontweight="bold")
-        
-        st.pyplot(fig1)
+        st.pyplot(fig)
         
     #GRAFICO 2: Segmentado por provincia Clicks vs. Comentarios por provincia.
         
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por provincia")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por provincia.")
         
-        filtered_df_prov = karma_clicks_df[karma_clicks_df["provincia"] != "Desconocido"]
+        filtered_df = karma_clicks_df[karma_clicks_df["provincia"] != "Desconocido"]
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+        sns.scatterplot(data=filtered_df, x="clicks", y="karma", hue="provincia", alpha=0.6, palette="tab10", ax=axes[0])
+        axes[0].set_xscale("log") 
+        axes[0].set_yscale("log")
+        axes[0].set_xlabel("Clicks")
+        axes[0].set_ylabel("Karma")
+        axes[0].set_title("Scatter Plot: Clicks vs Karma")
+
+        sns.scatterplot(data=filtered_df, x="clicks", y="comments", hue="provincia", alpha=0.6, palette="tab10", ax=axes[1])
+        axes[1].set_xscale("log")
+        axes[1].set_yscale("log")
+        axes[1].set_xlabel("Clicks")
+        axes[1].set_ylabel("Comments")
+        axes[1].set_title("Scatter Plot: Clicks vs Comments")
+
+        handles, labels = axes[1].get_legend_handles_labels()
+        fig.legend(handles, labels, title="Provincia", bbox_to_anchor=(1.05, 1), loc="upper left")
+        axes[0].legend_.remove() 
+        axes[1].legend_.remove()
         
-        fig2, axes2 = plt.subplots(1, 2, figsize=(14, 6))
-        
-        sns.scatterplot(data=filtered_df_prov, x="clicks", y="karma", hue="provincia", alpha=0.6, palette="tab10", ax=axes2[0])
-        axes2[0].set_xscale("log")
-        axes2[0].set_yscale("log")
-        axes2[0].set_xlabel("Clicks")
-        axes2[0].set_ylabel("Karma")
-        axes2[0].set_title("Scatter Plot: Clicks vs Karma", fontweight="bold")
-        
-        sns.scatterplot(data=filtered_df_prov, x="clicks", y="comments", hue="provincia", alpha=0.6, palette="tab10", ax=axes2[1])
-        axes2[1].set_xscale("log")
-        axes2[1].set_yscale("log")
-        axes2[1].set_xlabel("Clicks")
-        axes2[1].set_ylabel("Comments")
-        axes2[1].set_title("Scatter Plot: Clicks vs Comments", fontweight="bold")
-        
-        handles, labels = axes2[1].get_legend_handles_labels()
-        fig2.legend(handles, labels, title="Provincia", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes2[0].legend_.remove() 
-        axes2[1].legend_.remove()
-        
-        st.pyplot(fig2)
+        st.pyplot(fig)
         
     #GRAFICO 3: Segmentado por comunidad Clicks vs. Karma y Clicks vs. Comentarios.
         
         st.subheader("Clicks vs. karma y Clicks vs. comentarios por comunidad")
         st.write("Gráficos de dispersión que ilustran la relación entre clicks y karma en la parte izquierda, y entre clics y comentarios en la parte derecha, ambos en escala logarítmica y segmentados por comunidad.")
         
-        filtered_df_com = karma_clicks_df[karma_clicks_df["comunidad"] != "Desconocido"]
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+        sns.scatterplot(data=filtered_df, x="clicks", y="karma", hue="comunidad", alpha=0.6, palette="tab10", ax=axes[0])
+        axes[0].set_xscale("log") 
+        axes[0].set_yscale("log")
+        axes[0].set_xlabel("Clicks")
+        axes[0].set_ylabel("Karma")
+        axes[0].set_title("Scatter Plot: Clicks vs Karma")
+
+        sns.scatterplot(data=filtered_df, x="clicks", y="comments", hue="comunidad", alpha=0.6, palette="tab10", ax=axes[1])
+        axes[1].set_xscale("log")
+        axes[1].set_yscale("log")
+        axes[1].set_xlabel("Clicks")
+        axes[1].set_ylabel("Comments")
+        axes[1].set_title("Scatter Plot: Clicks vs Comments")
+
+        handles, labels = axes[1].get_legend_handles_labels()
+        fig.legend(handles, labels, title="Comunidad", bbox_to_anchor=(1.05, 1), loc="upper left")
+        axes[0].legend_.remove() 
+        axes[1].legend_.remove()
         
-        fig3, axes3 = plt.subplots(1, 2, figsize=(14, 6))
-        
-        sns.scatterplot(data=filtered_df_com, x="clicks", y="karma", hue="comunidad", alpha=0.6, palette="tab10", ax=axes3[0])
-        axes3[0].set_xscale("log")
-        axes3[0].set_yscale("log")
-        axes3[0].set_xlabel("Clicks")
-        axes3[0].set_ylabel("Karma")
-        axes3[0].set_title("Scatter Plot: Clicks vs Karma", fontweight="bold")
-        
-        sns.scatterplot(data=filtered_df_com, x="clicks", y="comments", hue="comunidad", alpha=0.6, palette="tab10", ax=axes3[1])
-        axes3[1].set_xscale("log")
-        axes3[1].set_yscale("log")
-        axes3[1].set_xlabel("Clicks")
-        axes3[1].set_ylabel("Comments")
-        axes3[1].set_title("Scatter Plot: Clicks vs Comments", fontweight="bold")
-        
-        handles, labels = axes3[1].get_legend_handles_labels()
-        fig3.legend(handles, labels, title="Comunidad", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes3[0].legend_.remove() 
-        axes3[1].legend_.remove()
-        
-        st.pyplot(fig3)
+        st.pyplot(fig)
 
     #GRAFICO 4 Cliks vs Karma y Cliks vs. y Cliks vs. Comentarios por Categoría.
         
