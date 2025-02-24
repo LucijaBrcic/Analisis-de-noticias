@@ -36,9 +36,56 @@ def data_presentation():
     #Subnavegación dentro de 'Presentación de Datos' mostrando Cliks vs. Karma y comentarios.
     
     data_option = st.sidebar.radio("Selecciona la sección de datos:", 
-                                   ("Gráficos: Clicks vs Karma y Comentarios", "Otra sección"), key="data_section")
+                                   ("Gráficos descriptivos", "Gráficos: Clicks vs Karma y Comentarios"), key="data_section")
     
-    
+    if data_option == "Gráficos descriptivos":
+    #GRAPH 1
+        
+        df_category = run_query("""
+            SELECT c.category, COUNT(n.news_id) AS news_count
+            FROM news_info_table n
+            JOIN category_table c ON n.category_id = c.category_id
+            GROUP BY 1
+            ORDER BY 2 DESC;
+        """)
+
+        st.subheader("Numero de noticias por categoria")
+        
+        ax = df_category.plot(kind='bar',x='category', y='news_count', legend=False, figsize=(6,4))
+        fig = ax.get_figure()
+        st.pyplot(fig)
+
+        st.subheader("Promedio de varias metricas por categoria")
+        def barplot(ax, var):
+            query = run_query(f"SELECT c.category, AVG(n.{var}) AS average_{var} FROM news_info_table n JOIN category_table c ON n.category_id = c.category_id GROUP BY n.category_id ORDER BY 2 DESC;")
+
+            query.set_index("category", inplace=True)
+
+            query.plot(kind='bar', color='royalblue', edgecolor='black', alpha=0.8, ax=ax, legend=False)
+
+            ax.set_title(f"Promedio de {var} por categoría", fontsize=12, fontweight='bold')
+            ax.set_xlabel("Categoría", fontsize=10)
+            ax.set_ylabel(f"Promedio de {var}", fontsize=10)
+            ax.tick_params(axis='x', rotation=90)
+
+        continuous_variables = ['meneos', 'clicks', 'karma', 'comments', 'positive_votes', 'anonymous_votes', 'negative_votes']
+
+        cols = 2
+        rows = math.ceil(len(continuous_variables) / cols)
+
+        fig, axes = plt.subplots(rows, cols, figsize=(15, 5 * rows))
+
+        axes = axes.flatten()
+
+        for i, var in enumerate(continuous_variables):
+            barplot(axes[i], var)
+
+        for j in range(i+1, len(axes)):
+            fig.delaxes(axes[j])
+
+        plt.tight_layout()
+        st.pyplot(fig)
+        
     if data_option == "Gráficos: Clicks vs Karma y Comentarios":
 
 
@@ -70,7 +117,7 @@ def data_presentation():
         axes[1].set_xlabel("Clicks")
         axes[1].set_ylabel("Comments")
         axes[1].set_title("Scatter Plot: Clicks vs Comments")
-        
+
         st.pyplot(fig)
         
     #GRAFICO 2: Segmentado por provincia Clicks vs. Comentarios por provincia.
