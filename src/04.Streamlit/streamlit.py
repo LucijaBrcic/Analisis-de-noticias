@@ -4,11 +4,26 @@ from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import math
+import calendar
+from datetime import datetime
 
-# Configurar la página en modo "wide" mejorando tanto en dato como en gráficos la visualización en streamlit.
 
-st.set_page_config(layout="wide")
+#---------------SETTINGS-----------------
+page_title = "Análisis de noticias"
+page_icon = ":newspaper:"
+layout = "wide"
+#----------------------------------------
 
+st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
+st.title(page_title + " " + page_icon)
+
+#years = [datetime.today().year, datetime.today().year + 1]
+#months = list(calendar.month_name[1:])
+categories = ["All"] + ["News", "Sports", "Entertainment"]
+provinces = ["All"] + ["Province1", "Province2"]
 
 user = "root"
 password = "password123"
@@ -24,9 +39,84 @@ def run_query(query):
 # Página principal (Landing Page)
 
 def landing_page():
-    st.title("Página Principal")
-    st.write("Bienvenido a la aplicación.")
 
+    st.title("Página Principal")
+
+    df = run_query("""
+        SELECT n.news_id, n.title, n.content, c.category, n.meneos, n.clicks, n.karma, n.comments, n.positive_votes, n.anonymous_votes, n.negative_votes, s.source, n.source_link, n.published_date, n.scraped_date, u.user, l.provincia, l.comunidad 
+        FROM news_info_table n
+        JOIN category_table c ON n.category_id = c.category_id
+        JOIN location_table l ON n.provincia_id = l.provincia_id
+        JOIN user_table u ON n.user_id = u.user_id
+        JOIN source_table s ON n.source_id = s.source_id
+    """)
+
+    max_click = df['clicks'].max()
+    min_click = df['clicks'].min()
+
+    st.header("Filter data")
+
+    with st.form("entry form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        col1.selectbox("Select Category:", categories, key="category")
+        #col2.selectbox("Select Month:", months, key="month")
+        #col3.selectbox("Select Year:", years, key="year")
+        col2.selectbox("Select province:", provinces, key="province")
+
+        user_input = st.text_input("Search for user:", key="user")
+
+        clicks_range = st.slider(
+            "Select clicks range:",
+            min_value=min_click,
+            max_value=max_click,
+            value=(int(min_click), int(max_click//2)),
+            key="clicks_range"
+        )
+
+        submitted = st.form_submit_button("Filter")
+    
+        if submitted:
+            st.write("Filtering for user:", user_input)
+
+            #Clicks
+            lower_clicks, upper_clicks = clicks_range
+
+            where_clauses = [f"clicks BETWEEN {lower_clicks} AND {upper_clicks}"]
+
+            if selected_category != "All":
+                where_clauses.append(f"category = '{selected_category}'")
+            if selected_month != "All":
+                where_clauses.append(f"month = '{selected_month}'")
+            if selected_year != "All":
+                where_clauses.append(f"year = '{selected_year}'")
+            if selected_province != "All":
+                where_clauses.append(f"provincia = '{selected_province}'")
+            if user_input:
+                where_clauses.append(f"user LIKE '%{user_input}%'")
+
+            where_sql = " AND ".join(where_clauses)
+
+            query = f"""
+            SELECT n.news_id, n.title, n.content, c.category, n.meneos, n.clicks, n.karma, n.comments, 
+                   n.positive_votes, n.anonymous_votes, n.negative_votes, s.source, n.source_link, 
+                   n.published_date, n.scraped_date, u.user, l.provincia, l.comunidad 
+            FROM news_info_table n
+            JOIN category_table c ON n.category_id = c.category_id
+            JOIN location_table l ON n.provincia_id = l.provincia_id
+            JOIN user_table u ON n.user_id = u.user_id
+            JOIN source_table s ON n.source_id = s.source_id
+            WHERE {where_sql}
+            """
+            
+            st.write("SQL Query:")
+            st.code(query)
+            
+            # Execute the query to get only filtered data
+            filtered_data = run_query(query)
+            st.write("Filtered Data:")
+            st.dataframe(filtered_data)
+
+            
 #Presentación de Datos con subnavegación, mostrando en varias partes, también mapas Dashboard y demás gráficos.
 
 def data_presentation():
@@ -48,6 +138,73 @@ def data_presentation():
             GROUP BY 1
             ORDER BY 2 DESC;
         """)
+        st.subheader("Distribución de varias métricas por categoría con Plotly")
+
+        # List of continuous variables to plot
+        continuous_variables = [
+            'meneos', 'clicks', 'karma', 'comments', 
+            'positive_votes', 'anonymous_votes', 'negative_votes'
+        ]
+
+        # Set up subplot grid dimensions (2 columns)
+        cols = 2
+        rows = math.ceil(len(continuous_variables) / cols)
+
+        # Create a subplot figure with titles for each subplot
+        fig = make_subplots(
+            rows=rows,
+            cols=cols,
+            subplot_titles=[f"Distribución de {var}" for var in continuous_variables]
+        )
+
+        # Loop through each variable and create a boxplot in its subplot
+        for i, var in enumerate(continuous_variables):
+            # Retrieve data for the given variable per category
+            query = run_query(f"""
+                SELECT c.category, n.{var}
+                FROM news_info_table n
+                JOIN category_table c ON n.category_id = c.category_id;
+            """)
+            
+            # Determine subplot position
+            row = i // cols + 1
+            col = i % cols + 1
+
+            # Get unique categories
+            unique_categories = query['category'].unique()
+            
+            # For each category, add a box trace to the subplot
+            for category in unique_categories:
+                data = query[query['category'] == category][var]
+                fig.add_trace(
+                    go.Box(
+                        y=data,
+                        name=category,
+                        boxmean=True,
+                        marker=dict(color='lightblue'),
+                        showlegend=(i == 0)
+                    ),
+                    row=row,
+                    col=col
+                )
+            
+            # Optionally, update x- and y-axis titles for clarity
+            fig.update_xaxes(title_text="Categoría", row=row, col=col)
+            fig.update_yaxes(title_text=var, row=row, col=col)
+
+        # Update layout settings for overall figure with larger dimensions
+        fig.update_layout(
+            height=800 * rows,  # Increase height based on the number of rows
+            width=1200,         # Set a wider width
+            title_text="Distribución de métricas por categoría",
+            boxmode='group'
+        )
+
+        # Render the Plotly figure in Streamlit using the container's width
+        st.plotly_chart(fig, use_container_width=True)
+
+
+
 
         st.subheader("Numero de noticias por categoria")
         
