@@ -10,6 +10,8 @@ cmake-build-*/
 # File-based project format
 *.iws
 
+venv/
+
 # IntelliJ
 out/
 
