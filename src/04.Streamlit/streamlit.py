@@ -8,6 +8,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import math
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+import pymysql
 
 
 #---------------SETTINGS-----------------
@@ -24,12 +27,15 @@ st.title(page_title + " " + page_icon)
 categories = ["All"] + ["News", "Sports", "Entertainment"]
 provinces = ["All"] + ["Province1", "Province2"]
 
-user = "root"
-password = "password123"
-database = "meneame"
+load_dotenv()
+
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+host = os.getenv("HOST", "localhost")
+database="meneame"
+
 engine = create_engine(f"mysql+pymysql://{user}:{password}@localhost/{database}")
         
-#Función para conectar con la base de datos SQL y pode así hacer la selección desde las tablas, haciendo un join con la localización_table, y category_table.
         
 def run_query(query):
     with engine.connect() as connection:
@@ -42,14 +48,14 @@ def landing_page():
     st.title("Página Principal")
 
     df = run_query("""
-        SELECT n.news_id, n.title, n.content, c.category, n.meneos, n.clicks, n.karma, n.comments, n.positive_votes, n.anonymous_votes, n.negative_votes, s.source, n.source_link, n.published_date, n.scraped_date, u.user, l.provincia, l.comunidad 
+        SELECT n.news_id, n.title, n.content, c.category, n.meneos, n.clicks, n.karma, n.comments, n.positive_votes, n.anonymous_votes, n.negative_votes, s.source, n.source_link, n.published_date, u.user, l.provincia, l.comunidad 
         FROM news_info_table n
         JOIN category_table c ON n.category_id = c.category_id
         JOIN location_table l ON n.provincia_id = l.provincia_id
         JOIN user_table u ON n.user_id = u.user_id
         JOIN source_table s ON n.source_id = s.source_id
     """)
-
+    st.dataframe(df)
     max_click = df['clicks'].max()
     min_click = df['clicks'].min()
 

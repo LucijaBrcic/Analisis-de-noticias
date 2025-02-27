@@ -53,5 +53,5 @@ urllib3==2.3.0
 plotly
 python-dotenv
 pymysql
-
+watchdog
 
