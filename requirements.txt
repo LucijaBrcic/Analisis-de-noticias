@@ -55,3 +55,7 @@ python-dotenv
 pymysql
 watchdog
 statsmodels
+scikit-learn
+nltk
+xgboost
+imbalanced-learn
