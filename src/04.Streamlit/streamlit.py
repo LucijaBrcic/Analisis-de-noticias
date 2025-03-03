@@ -385,9 +385,86 @@ def detailed_view():
 
 st.sidebar.title("Navegación")
 opcion = st.sidebar.radio("Selecciona una vista:", 
-                          ("Página Principal", "Presentación de Datos", "Vista Detallada"), key="main_nav")
+                          ("Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Predicciones"), key="main_nav")
 
 #Cargar la vista según la selección
+
+
+
+# Crear las métricas
+def calcular_metricas_comparaciones(df):
+    # Número total de noticias por fuente
+    total_news_by_source = df['source'].value_counts().reset_index()
+    total_news_by_source.columns = ['source', 'total_news']
+
+    # Frecuencia de publicación (noticias por día)
+    df['date'] = df['published_date'].dt.date
+    news_per_day = df.groupby(['source', 'date']).size().reset_index(name='news_per_day')
+    avg_news_per_day = news_per_day.groupby('source')['news_per_day'].mean().reset_index()
+
+    # Aceptación de las noticias (karma promedio por fuente)
+    avg_karma_by_source = df.groupby('source')['karma'].mean().reset_index()
+
+    # Engagement (comentarios y clicks promedio por fuente)
+    avg_comments_by_source = df.groupby('source')['comments'].mean().reset_index()
+    avg_clicks_by_source = df.groupby('source')['clicks'].mean().reset_index()
+
+    return {
+        'total_news': total_news_by_source,
+        'avg_news_per_day': avg_news_per_day,
+        'avg_karma': avg_karma_by_source,
+        'avg_comments': avg_comments_by_source,
+        'avg_clicks': avg_clicks_by_source
+    }
+
+
+def source_comparison():
+    # Cargar las tablas
+    news_info = run_query("SELECT * FROM news_info_table")
+    source_table = run_query("SELECT * FROM source_table")
+
+    # Unir las tablas en base a source_id
+    df = pd.merge(news_info, source_table, on='source_id')
+
+    # Convertir la fecha a datetime
+    df['published_date'] = pd.to_datetime(df['published_date'])
+
+    # Calcular todas las métricas
+    metricas = calcular_metricas_comparaciones(df)
+
+    # Título de la aplicación
+    st.title('Comparador de Fuentes de Noticias')
+
+    # Selectbox para elegir la métrica
+    opciones = {
+        'Número total de noticias': 'total_news',
+        'Frecuencia de publicación (noticias por día)': 'avg_news_per_day',
+        'Aceptación de las noticias (karma promedio)': 'avg_karma',
+        'Engagement (comentarios promedio)': 'avg_comments',
+        'Engagement (clicks promedio)': 'avg_clicks'
+    }
+
+    seleccion = st.selectbox(
+        'Selecciona una métrica para comparar:',
+        list(opciones.keys())
+    )
+
+    # Seleccionar la métrica correspondiente
+    metrica_seleccionada = opciones[seleccion]
+    datos_metricas = metricas[metrica_seleccionada]
+
+    # Ordenar los datos según la métrica seleccionada
+    datos_metricas = datos_metricas.nlargest(10, datos_metricas.columns[1])
+
+    # Mostrar el gráfico
+    st.header(f'{seleccion} - TOP 10')
+    st.bar_chart(datos_metricas.set_index('source'))
+
+
+def predictions():
+    st.title("Predicciones")
+    st.write("Aquí se mostrarán las predicciones")
+
 
 if opcion == "Página Principal":
     landing_page()
@@ -395,3 +472,7 @@ elif opcion == "Presentación de Datos":
     data_presentation()
 elif opcion == "Vista Detallada":
     detailed_view()
+elif opcion == "Comparador de Fuentes":
+    source_comparison()
+elif opcion == "Predicciones":
+    predictions()
