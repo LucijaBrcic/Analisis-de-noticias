@@ -45,6 +45,32 @@ def run_query(query):
     with engine.connect() as connection:
         return pd.read_sql(query, connection)
     
+
+def home_page():
+    st.write("Bienvenidos")
+    # Generame unos textos o seccion de bienvenidaexplicando las distintas secciones de la aplicacion y el temario estudiando en el bootcamp de ciencia de datos de hackaboss
+    # lo dejo a tu eleccion
+    st.write("Esta aplicación web permite analizar noticias de Meneame")
+    st.write("Puedes navegar por las distintas secciones de la aplicación en el menú de la izquierda")
+    st.write("Las secciones disponibles son:")
+    st.write("- Página Principal")
+    st.write("- Presentación de Datos")
+    st.write("- Vista Detallada")
+    st.write("- Comparador de Fuentes")
+    st.write("- Predicciones")
+    st.write("- Acerca de nosotros")
+    st.write("¡Esperamos que disfrutes de la aplicación!")
+
+    # Explica en profundidad de que va cada seccion
+    st.write("Página Principal: Muestra un resumen de las noticias")
+    st.write("Presentación de Datos: Muestra gráficos y estadísticas sobre las noticias")
+    st.write("Vista Detallada: Permite buscar y comparar inmuebles")
+    st.write("Comparador de Fuentes: Compara distintas fuentes de noticias")
+    st.write("Predicciones: Realiza predicciones sobre los clicks de las noticias")
+    st.write("Acerca de nosotros: Información sobre el equipo de desarrollo")
+    
+
+
 # Página principal (Landing Page)
 
 def landing_page():
@@ -389,7 +415,7 @@ def detailed_view():
 
 st.sidebar.title("Navegación")
 opcion = st.sidebar.radio("Selecciona una vista:", 
-                          ("Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Predicciones", "Acerca de nosotros"), key="main_nav")
+                          ("Bienvenidos/Home", "Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Predicciones", "Acerca de nosotros"), key="main_nav")
 
 #Cargar la vista según la selección
 
@@ -566,3 +592,5 @@ elif opcion == "Predicciones":
     predictions()
 elif opcion == "Acerca de nosotros":
     about_us()
+elif opcion == "Bienvenidos/Home":
+    home_page()
