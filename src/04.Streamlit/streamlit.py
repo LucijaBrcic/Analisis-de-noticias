@@ -389,7 +389,7 @@ def detailed_view():
 
 st.sidebar.title("Navegación")
 opcion = st.sidebar.radio("Selecciona una vista:", 
-                          ("Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Predicciones"), key="main_nav")
+                          ("Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Predicciones", "Acerca de nosotros"), key="main_nav")
 
 #Cargar la vista según la selección
 
@@ -531,6 +531,29 @@ def predictions():
         st.write("Por favor, sube un archivo CSV para comenzar.")
 
 
+def about_us():   
+    st.title("👥 Acerca de nosotros")
+    st.write("Somos un grupo de estudiantes de Data Science en Hackaboss")
+    st.write("Este es nuestro proyecto final de la fase de formación en Data Science")
+    st.write("Esperamos que disfrutes de la aplicación que hemos creado")
+
+    # Lista de integrantes
+    integrantes = [
+        ("Lucia", "https://example.com", "https://github.com/LucijaBrcic"),
+        ("Jordi", "https://example.com", "https://github.com/jmontseny"),
+        ("Manu", "https://example.com", "https://github.com/manusortizz"),
+        ("Luis Serrano Borras", "https://example.com", "https://github.com/Luis-serrab"),
+    ]
+
+    # Mostrar cada integrante en una fila con columnas
+    for nombre, linkedin, github in integrantes:
+        col1, col2, col3 = st.columns([2, 1, 1])  # Distribución de columnas
+        col1.write(f"**{nombre}**")
+        col2.markdown(f"[🔗 LinkedIn]({linkedin})", unsafe_allow_html=True)
+        col3.markdown(f"[🐙 GitHub]({github})", unsafe_allow_html=True)
+
+
+
 if opcion == "Página Principal":
     landing_page()
 elif opcion == "Presentación de Datos":
@@ -541,3 +564,5 @@ elif opcion == "Comparador de Fuentes":
     source_comparison()
 elif opcion == "Predicciones":
     predictions()
+elif opcion == "Acerca de nosotros":
+    about_us()
