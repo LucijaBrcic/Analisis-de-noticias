@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import joblib
 from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -11,6 +13,8 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import pymysql
+import seaborn as sns
+
 
 
 #---------------SETTINGS-----------------
@@ -462,8 +466,69 @@ def source_comparison():
 
 
 def predictions():
-    st.title("Predicciones")
-    st.write("Aquí se mostrarán las predicciones")
+    # Cargar el modelo entrenado
+    model = joblib.load('src/03_01.ML/modelo_entrenado_mejorado.pkl')
+
+    # Título de la aplicación
+    st.title('Predicción de Clicks en Noticias')
+
+    # Cargar datos (puedes cargarlos desde un archivo o desde la base de datos)
+    # Aquí asumimos que tienes un archivo CSV con los datos
+    st.write("Tenemos un fichero de ejemplo en la carpeta 04.Streamlit llamado sample_uploadcsv_to_predict.csv")
+
+    uploaded_file = st.file_uploader("Sube un archivo CSV con los datos", type=["csv"])
+
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+
+        # Mostrar los datos cargados
+        st.write("Datos cargados:")
+        st.write(df)
+
+        # Seleccionar características relevantes (deben coincidir con las usadas en el entrenamiento)
+        features = ['category_id', 'meneos', 'karma', 'positive_votes', 'negative_votes', 'comments', 'day_of_week', 'month', 'year', 'votes_ratio', 'votes_diff', 'interaction']
+        df_selected = df[features]
+
+        # Realizar predicciones
+        predictions = model.predict(df_selected)
+
+        # Añadir las predicciones al DataFrame
+        df['predicted_clicks'] = predictions
+
+        # Mostrar las predicciones
+        st.write("Predicciones de Clicks:")
+        st.write(df[['category_id', 'meneos', 'karma', 'predicted_clicks']])
+
+        # Gráfico de predicciones vs valores reales (si tienes los valores reales)
+        if 'clicks' in df.columns:
+            st.write("Gráfico de Predicciones vs Valores Reales:")
+            fig, ax = plt.subplots()
+            sns.scatterplot(x=df['clicks'], y=df['predicted_clicks'], ax=ax)
+            ax.set_xlabel('Clicks Reales')
+            ax.set_ylabel('Clicks Predichos')
+            ax.set_title('Predicciones vs Valores Reales')
+            st.pyplot(fig)
+
+        # Gráfico de distribución de predicciones
+        st.write("Distribución de Predicciones de Clicks:")
+        fig, ax = plt.subplots()
+        sns.histplot(df['predicted_clicks'], kde=True, ax=ax)
+        ax.set_xlabel('Clicks Predichos')
+        ax.set_ylabel('Frecuencia')
+        ax.set_title('Distribución de Predicciones de Clicks')
+        st.pyplot(fig)
+
+        # Gráfico de predicciones por categoría
+        st.write("Predicciones de Clicks por Categoría:")
+        fig, ax = plt.subplots()
+        sns.boxplot(x='category_id', y='predicted_clicks', data=df, ax=ax)
+        ax.set_xlabel('Categoría')
+        ax.set_ylabel('Clicks Predichos')
+        ax.set_title('Predicciones de Clicks por Categoría')
+        st.pyplot(fig)
+
+    else:
+        st.write("Por favor, sube un archivo CSV para comenzar.")
 
 
 if opcion == "Página Principal":
