@@ -1,17 +1,22 @@
 import numpy as np
 import joblib
 import pandas as pd
+import os
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configuración de la conexión a la base de datos
-user = "myuser"
-password = "mypassword"
-host = "localhost"
-database_url = f"mysql+mysqlconnector://{user}:{password}@{host}/meneame"
-engine = create_engine(database_url)
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("HOST", "localhost")
+DB_NAME = "meneame"
+DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+engine = create_engine(DATABASE_URL)
 
 print("Conectado a la base de datos")
 
