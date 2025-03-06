@@ -13,7 +13,9 @@ from dotenv import load_dotenv
 import plotly.express as px
 import numpy as np
 import plotly.figure_factory as ff
-
+from nuevo_choropleth_map.py import generar_mapa
+import streamlit as st
+from streamlit_folium import folium_static
 
 #---------------SETTINGS-----------------
 page_title = "Análisis de noticias"
@@ -54,7 +56,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-menu_options = ["Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes"]
+menu_options = ["Página Principal", "Presentación de Datos", "Vista Detallada", "Comparador de Fuentes", "Mapa choropleth"]
 page = st.sidebar.radio("Selecciona una página:", menu_options)
 
 # Top navigation bar
@@ -227,3 +229,17 @@ elif page == "Vista Detallada":
 
 elif page == "Comparador de Fuentes":
     st.header("Comparador de Fuentes")
+
+elif page == "Mapa choropleth":
+
+    st.title("Mapa de Publicaciones en España")
+
+    # Select province or community level
+    nivel = st.radio("Seleccione el nivel de visualización:", ("provincia", "comunidad"))
+
+    # Generate the map
+    st.write(f"Mostrando datos por {nivel.capitalize()}:")
+    mapa = generar_mapa(nivel)
+
+    # Display the map in Streamlit
+    folium_static(mapa)
