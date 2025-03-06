@@ -13,7 +13,10 @@ from dotenv import load_dotenv
 import plotly.express as px
 import numpy as np
 import plotly.figure_factory as ff
-from nuevo_choropleth_map.py import generar_mapa
+
+import sys
+sys.path.append("../utils")
+from nuevo_choropleth_map import generar_mapa
 import streamlit as st
 from streamlit_folium import folium_static
 
