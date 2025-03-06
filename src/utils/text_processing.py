@@ -1,18 +1,9 @@
 import pandas as pd
 import numpy as np
 from utils.provincias_data import PROVINCIAS_COMUNIDADES
+from utils.news_category_map import news_category_map
 
 def asignar_provincia_comunidad(df):
-    """
-    Assigns 'provincia' and 'comunidad' based on the 'title' and 'content' columns.
-    If 'Desconocido' is assigned, it replaces it with NaN.
-
-    Args:
-        df (pd.DataFrame): DataFrame containing 'title' and 'content' columns.
-
-    Returns:
-        pd.DataFrame: The updated DataFrame with 'provincia' and 'comunidad' columns.
-    """
     def find_location(row):
         title = str(row["title"]) if pd.notna(row["title"]) else ""
         content = str(row["content"]) if pd.notna(row["content"]) else ""
@@ -31,10 +22,16 @@ def asignar_provincia_comunidad(df):
 
         return {"provincia": "Desconocido", "comunidad": "Desconocido"}
 
-    # Apply function to all rows
     df[["provincia", "comunidad"]] = df.apply(find_location, axis=1).apply(pd.Series)
 
-    # Replace "Desconocido" with NaN
     df.replace({"provincia": "Desconocido", "comunidad": "Desconocido"}, np.nan, inplace=True)
 
-    return df
+
+
+def categorize_news(df):
+    category_lookup = {word.lower(): category for category, words in news_category_map.items() for word in words}
+
+    def map_category(category):
+        return category_lookup.get(category.lower(), "Otros")
+
+    df["category"] = df["category"].apply(map_category)

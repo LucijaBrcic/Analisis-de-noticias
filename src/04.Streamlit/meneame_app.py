@@ -15,7 +15,7 @@ import numpy as np
 import plotly.figure_factory as ff
 
 import sys
-sys.path.append("../utils")
+sys.path.append("../src")
 from nuevo_choropleth_map import generar_mapa
 import streamlit as st
 from streamlit_folium import folium_static
