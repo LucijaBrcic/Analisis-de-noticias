@@ -4,31 +4,13 @@ from utils.provincias_data import PROVINCIAS_COMUNIDADES
 from utils.news_category_map import news_category_map
 
 class NewsProcessor:
-    """
-    A class to process news articles by assigning provinces, communities, and categories.
-    """
 
     def __init__(self, provincias_comunidades=PROVINCIAS_COMUNIDADES, category_map=news_category_map):
-        """
-        Initialize the processor with external data dependencies.
         
-        Args:
-            provincias_comunidades (dict): Mapping of communities and provinces.
-            category_map (dict): Mapping of categories to their associated keywords.
-        """
         self.provincias_comunidades = provincias_comunidades
         self.category_lookup = {word.lower(): category for category, words in category_map.items() for word in words}
 
     def assign_province_and_community(self, df):
-        """
-        Assigns 'provincia' and 'comunidad' based on the 'title' and 'content' columns.
-
-        Args:
-            df (pd.DataFrame): DataFrame with 'title' and 'content' columns.
-
-        Returns:
-            pd.DataFrame: DataFrame with assigned 'provincia' and 'comunidad'.
-        """
 
         def find_location(row):
             title = str(row["title"]) if pd.notna(row["title"]) else ""
@@ -56,14 +38,25 @@ class NewsProcessor:
         return df
 
     def categorize_news(self, df):
-        """
-        Maps each news article to a predefined category.
-
-        Args:
-            df (pd.DataFrame): DataFrame with a 'category' column.
-
-        Returns:
-            pd.DataFrame: DataFrame with updated category values.
-        """
         df["category"] = df["category"].apply(lambda x: self.category_lookup.get(x.lower(), "Otros"))
+        return df
+    
+    def change_type(df):
+        df = df.astype({
+            "meneos": "uint16",
+            "karma": "uint16",
+            "positive_votes": "uint16",
+            "negative_votes": "uint16",
+            "anonymous_votes": "uint16",
+            "comments": "uint16",
+            "category": "category",
+            "provincia": "category",
+            "comunidad": "category"
+        })
+
+        df["clicks"] = df["clicks"].astype("float32")
+
+        df["published_date"] = pd.to_datetime(df["published_date"], errors="coerce")
+        df["scraped_date"] = pd.to_datetime(df["scraped_date"], errors="coerce")
+
         return df
