@@ -6,12 +6,10 @@ from utils.news_category_map import news_category_map
 class NewsProcessor:
 
     def __init__(self, provincias_comunidades=PROVINCIAS_COMUNIDADES, category_map=news_category_map):
-        
         self.provincias_comunidades = provincias_comunidades
         self.category_lookup = {word.lower(): category for category, words in category_map.items() for word in words}
 
     def assign_province_and_community(self, df):
-
         def find_location(row):
             title = str(row["title"]) if pd.notna(row["title"]) else ""
             content = str(row["content"]) if pd.notna(row["content"]) else ""
@@ -28,20 +26,19 @@ class NewsProcessor:
                     if variante in title or variante in content:
                         return {"provincia": provincia_estandar, "comunidad": comunidad}
 
-            return {"provincia": "Desconocido", "comunidad": "Desconocido"}
+            return {"provincia": np.nan, "comunidad": np.nan}  
 
         df[["provincia", "comunidad"]] = df.apply(find_location, axis=1).apply(pd.Series)
-
-        # Replace "Desconocido" with NaN
-        df.replace({"provincia": "Desconocido", "comunidad": "Desconocido"}, np.nan, inplace=True)
 
         return df
 
     def categorize_news(self, df):
         df["category"] = df["category"].apply(lambda x: self.category_lookup.get(x.lower(), "Otros"))
         return df
-    
-    def change_type(df):
+
+    def change_type(self, df):
+        df = df.copy()  
+        
         df = df.astype({
             "meneos": "uint16",
             "karma": "uint16",
@@ -54,9 +51,10 @@ class NewsProcessor:
             "comunidad": "category"
         })
 
-        df["clicks"] = df["clicks"].astype("float32")
+        df["clicks"] = pd.to_numeric(df["clicks"], errors="coerce").astype("float32")
 
         df["published_date"] = pd.to_datetime(df["published_date"], errors="coerce")
         df["scraped_date"] = pd.to_datetime(df["scraped_date"], errors="coerce")
 
-        return df
+        return df 
+
