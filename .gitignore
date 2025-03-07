@@ -234,3 +234,7 @@ pip-selfcheck.json
 .DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/python,virtualenv,visualstudiocode,intellijsrc/03_01.ML/random_forest_model.pkl
+
+
+#para poder hacer push sin subir .pkl
+*.pkl 
