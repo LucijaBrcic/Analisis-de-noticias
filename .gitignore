@@ -238,3 +238,5 @@ pip-selfcheck.json
 
 #para poder hacer push sin subir .pkl
 *.pkl 
+
+
