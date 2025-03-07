@@ -13,12 +13,15 @@ from dotenv import load_dotenv
 import plotly.express as px
 import numpy as np
 import plotly.figure_factory as ff
-
 import sys
-sys.path.append("../src")
-from nuevo_choropleth_map import generar_mapa
+load_dotenv()
+
+user = os.getenv("user")
+sys.path.append(f"/Users/{user}/Projects/Analisis-de-noticias/src")
+
+from utils.nuevo_choropleth_map import generar_mapa
+import streamlit.components.v1 as components
 import streamlit as st
-from streamlit_folium import folium_static
 
 #---------------SETTINGS-----------------
 page_title = "Análisis de noticias"
@@ -242,7 +245,15 @@ elif page == "Mapa choropleth":
 
     # Generate the map
     st.write(f"Mostrando datos por {nivel.capitalize()}:")
-    mapa = generar_mapa(nivel)
+    mapa = generar_mapa(nivel=nivel)
 
-    # Display the map in Streamlit
-    folium_static(mapa)
+    # Save the map as an HTML file
+    map_file = "map.html"
+    mapa.save(map_file)
+
+    # Read the HTML content and display it
+    with open(map_file, "r", encoding="utf-8") as f:
+        map_html = f.read()
+
+    # Embed the HTML in Streamlit
+    components.html(map_html, height=600, scrolling=False)
