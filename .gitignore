@@ -237,6 +237,10 @@ pip-selfcheck.json
 
 
 #para poder hacer push sin subir .pkl
-*.pkl 
+label_encoder.pkl
+random_forest_model.pkl
+tfidf_vectorizer.pkl
+
+
 
 
