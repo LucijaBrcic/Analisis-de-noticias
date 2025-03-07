@@ -1,23 +1,26 @@
-from sqlalchemy import create_engine
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+
 
 # Configurar estilo de gráficos
-
 sns.set_style("whitegrid")
 
-# Configurar la conexión a MySQL con SQLAlchemy y mysql-connector
 
-DB_USER = "root"
-DB_PASSWORD = "Luis_1234_borras"  # Reemplaza con tu password
-DB_HOST = "localhost"
+load_dotenv()
+
+# Configuración de la conexión a la base de datos
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("HOST", "localhost")
 DB_NAME = "meneame"
-
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 
 # Crear el motor de conexión con SQLAlchemy
-
 engine = create_engine(DATABASE_URL)
 
 # Consulta SQL para obtener datos agrupados por provincia, comunidad y categoría
