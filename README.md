@@ -45,6 +45,5 @@ Este comando instala todas las dependencias incluidas en el fichero requirements
 
 ### Autores
 - Lucia
-- Manuel
 - Jordi
 - Luis

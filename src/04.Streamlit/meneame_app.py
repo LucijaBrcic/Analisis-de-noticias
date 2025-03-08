@@ -13,14 +13,7 @@ from dotenv import load_dotenv
 import plotly.express as px
 import numpy as np
 import plotly.figure_factory as ff
-<<<<<<< HEAD
-
-import sys
-sys.path.append("../utils")
-from nuevo_choropleth_map import generar_mapa
-import streamlit as st
-from streamlit_folium import folium_static
-=======
+import plotly.graph_objects as go
 import sys
 load_dotenv()
 
@@ -29,8 +22,8 @@ sys.path.append(f"/Users/{user}/Projects/Analisis-de-noticias/src")
 
 from utils.nuevo_choropleth_map import generar_mapa
 import streamlit.components.v1 as components
-import streamlit as st
->>>>>>> a158af541e3c3d0f78d84df8bd9ea2448cd41cd7
+from utils.comparador_de_noticias import NewsAnalyzer
+
 
 #---------------SETTINGS-----------------
 page_title = "Análisis de noticias"
@@ -243,7 +236,139 @@ elif page == "Vista Detallada":
     st.write("Selecciona una noticia para ver más información detallada.")
 
 elif page == "Comparador de Fuentes":
-    st.header("Comparador de Fuentes")
+
+    st.title("Comparación de Noticias o Categorías")
+
+    analyzer = NewsAnalyzer()
+    option = st.radio("Seleccione el tipo de comparación", ["Noticias", "Categorías"])
+
+    # Placeholder for the graph
+    graph_placeholder = st.empty()
+
+    if option == "Noticias":
+        col1, col2 = st.columns(2)
+        with col1:
+            news_id1 = st.text_input("Ingrese el ID de la primera noticia")
+        with col2:
+            news_id2 = st.text_input("Ingrese el ID de la segunda noticia")
+        
+        compare_button = st.button("Comparar")
+        
+        if compare_button and news_id1 and news_id2:
+            try:
+                st.write("Comparando noticias...")
+                
+                # Generate the comparison data
+                max_values = analyzer.get_max_values()
+                variables = ["clicks", "comments", "karma", "positive_votes", "anonymous_votes", "negative_votes"]
+                df = analyzer.get_data(news_ids=[int(news_id1), int(news_id2)])
+                
+                if df.empty:
+                    st.error(f"No se encontraron datos para los news_id: {news_id1}, {news_id2}")
+                else:
+                    noticia1 = df[df['news_id'] == int(news_id1)]
+                    noticia2 = df[df['news_id'] == int(news_id2)]
+                    
+                    if noticia1.empty or noticia2.empty:
+                        st.error(f"No se encontró información para alguna de las noticias: {news_id1}, {news_id2}")
+                    else:
+                        data1 = analyzer.normalize_values(noticia1.iloc[0][variables], max_values, variables)
+                        data2 = analyzer.normalize_values(noticia2.iloc[0][variables], max_values, variables)
+                        values1 = noticia1.iloc[0][variables].values.tolist()
+                        values2 = noticia2.iloc[0][variables].values.tolist()
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatterpolar(
+                            r=data1 + [data1[0]],
+                            theta=variables + [variables[0]],
+                            fill='toself',
+                            name=f'Noticia {news_id1}',
+                            text=values1,
+                            hoverinfo='text',
+                            line=dict(color='blue', width=2)
+                        ))
+                        fig.add_trace(go.Scatterpolar(
+                            r=data2 + [data2[0]],
+                            theta=variables + [variables[0]],
+                            fill='toself',
+                            name=f'Noticia {news_id2}',
+                            text=values2,
+                            hoverinfo='text',
+                            line=dict(color='red', width=2)
+                        ))
+                        fig.update_layout(
+                            polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                            showlegend=True,
+                            title="Comparación de métricas",
+                            width=800,
+                            height=800
+                        )
+                        
+                        graph_placeholder.plotly_chart(fig)
+            except ValueError as e:
+                st.error(str(e))
+
+    elif option == "Categorías":
+        categories = analyzer.get_categories()
+        col1, col2 = st.columns(2)
+        with col1:
+            category1 = st.selectbox("Seleccione la primera categoría", categories)
+        with col2:
+            category2 = st.selectbox("Seleccione la segunda categoría", categories)
+        
+        compare_button = st.button("Comparar")
+        
+        if compare_button and category1 and category2:
+            try:
+                st.write("Comparando categorías...")
+                
+                # Generate the comparison data
+                max_values = analyzer.get_max_values()
+                variables = ["clicks", "comments", "karma", "positive_votes", "anonymous_votes", "negative_votes"]
+                df1 = analyzer.get_data(category=category1)
+                df2 = analyzer.get_data(category=category2)
+                
+                if df1.empty or df2.empty:
+                    st.error("Una de las categorías no tiene datos disponibles.")
+                else:
+                    data1 = analyzer.normalize_values(df1.iloc[0][variables], max_values, variables)
+                    data2 = analyzer.normalize_values(df2.iloc[0][variables], max_values, variables)
+                    values1 = df1.iloc[0][variables].values.tolist()
+                    values2 = df2.iloc[0][variables].values.tolist()
+                    
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatterpolar(
+                        r=data1 + [data1[0]],
+                        theta=variables + [variables[0]],
+                        fill='toself',
+                        name=f'Categoría {category1}',
+                        text=values1,
+                        hoverinfo='text',
+                        line=dict(color='blue', width=2)
+                    ))
+                    fig.add_trace(go.Scatterpolar(
+                        r=data2 + [data2[0]],
+                        theta=variables + [variables[0]],
+                        fill='toself',
+                        name=f'Categoría {category2}',
+                        text=values2,
+                        hoverinfo='text',
+                        line=dict(color='red', width=2)
+                    ))
+                    fig.update_layout(
+                        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                        showlegend=True,
+                        title="Comparación de métricas",
+                        width=800,
+                        height=800
+                    )
+                    
+                    graph_placeholder.plotly_chart(fig)
+            except ValueError as e:
+                st.error(str(e))
+
+
+# MAPA CHOROPLETH
 
 elif page == "Mapa choropleth":
 
@@ -254,12 +379,6 @@ elif page == "Mapa choropleth":
 
     # Generate the map
     st.write(f"Mostrando datos por {nivel.capitalize()}:")
-<<<<<<< HEAD
-    mapa = generar_mapa(nivel)
-
-    # Display the map in Streamlit
-    folium_static(mapa)
-=======
     mapa = generar_mapa(nivel=nivel)
 
     # Save the map as an HTML file
@@ -272,4 +391,3 @@ elif page == "Mapa choropleth":
 
     # Embed the HTML in Streamlit
     components.html(map_html, height=600, scrolling=False)
->>>>>>> a158af541e3c3d0f78d84df8bd9ea2448cd41cd7
