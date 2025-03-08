@@ -60,7 +60,7 @@ def generar_mapa(nivel="provincia"):
 
     df = pd.read_sql(query, engine)
 
-    # 🔴 Ensure Timestamp Columns Are Converted to Strings in df
+    # Ensure Timestamp Columns Are Converted to Strings in df
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             df[col] = df[col].astype(str)
@@ -72,7 +72,7 @@ def generar_mapa(nivel="provincia"):
     geojson_file = f"../00.data/GeoJSON/spain-{'provinces' if nivel == 'provincia' else 'communities'}.geojson"
     gdf = gpd.read_file(geojson_file)
 
-    # 🔴 Ensure Timestamp Columns Are Converted to Strings in gdf
+    # Ensure Timestamp Columns Are Converted to Strings in gdf
     for col in gdf.columns:
         if pd.api.types.is_datetime64_any_dtype(gdf[col]):
             gdf[col] = gdf[col].astype(str)
