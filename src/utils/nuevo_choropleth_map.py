@@ -59,19 +59,43 @@ def generar_mapa(nivel="provincia"):
     """
 
     df = pd.read_sql(query, engine)
+<<<<<<< HEAD
     
+=======
+
+    # 🔴 Ensure Timestamp Columns Are Converted to Strings in df
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].astype(str)
+
+>>>>>>> a158af541e3c3d0f78d84df8bd9ea2448cd41cd7
     agrupacion = "provincia" if nivel == "provincia" else "comunidad"
     df = df[df[agrupacion] != "Desconocido"]
     df[agrupacion] = df[agrupacion].replace(MAPEO_PROVINCIAS if nivel == "provincia" else MAPEO_COMUNIDADES)
 
     geojson_file = f"../00.data/GeoJSON/spain-{'provinces' if nivel == 'provincia' else 'communities'}.geojson"
     gdf = gpd.read_file(geojson_file)
+<<<<<<< HEAD
     
+=======
+
+    # 🔴 Ensure Timestamp Columns Are Converted to Strings in gdf
+    for col in gdf.columns:
+        if pd.api.types.is_datetime64_any_dtype(gdf[col]):
+            gdf[col] = gdf[col].astype(str)
+
+    # Merge DataFrames
+>>>>>>> a158af541e3c3d0f78d84df8bd9ea2448cd41cd7
     gdf = gdf.merge(df, left_on="name", right_on=agrupacion, how="left").fillna(0)
     gdf["publicaciones_norm"] = gdf["num_publicaciones"] / gdf["num_publicaciones"].max()
 
     mapa = folium.Map(location=[40.0, -3.5], zoom_start=6)
+<<<<<<< HEAD
     colormap = branca.colormap.linear.YlOrRd_09.scale(0, 1).caption("Número de Publicaciones")
+=======
+    colormap = branca.colormap.linear.YlOrRd_09.scale(0, 1)
+    colormap.caption = "Número de Publicaciones"
+>>>>>>> a158af541e3c3d0f78d84df8bd9ea2448cd41cd7
 
     folium.GeoJson(
         gdf,

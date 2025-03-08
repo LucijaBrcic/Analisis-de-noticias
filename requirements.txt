@@ -73,3 +73,6 @@ nltk
 xgboost
 imbalanced-learn
 spacy
+folium
+branca
+
