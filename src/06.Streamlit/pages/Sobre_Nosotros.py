@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 
+
 def about_us():
     st.title("👥 Acerca de Nosotros")
     st.write("Somos un grupo de estudiantes de Data Science en Hackaboss.")
@@ -10,9 +11,11 @@ def about_us():
     # Get absolute path of the images directory
     images_dir = os.path.join("pages", "images")
 
+    
+
     # Lista de integrantes (Nombre, Foto, LinkedIn)
     integrantes = [
-        ("Lucija", os.path.join(images_dir, "lucija.jpg"), "https://linkedin.com/in/lucija"),
+        ("Lucija", os.path.join(images_dir, "lucija.jpg"), "www.linkedin.com/in/lucija-brcic-7479b31a4"),
         ("Jordi", os.path.join(images_dir, "jordi.jpg"), "https://linkedin.com/in/jordi"),
         ("Luis Serrano Borras", os.path.join(images_dir, "luis.jpg"), "https://linkedin.com/in/luis"),
     ]
