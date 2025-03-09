@@ -1,8 +1,14 @@
 import streamlit as st
 
-st.set_page_config(page_title="Menéame Analysis", layout="wide")
+#---------------SETTINGS-----------------
+page_title = "Análisis de noticias"
+page_icon = ":newspaper:"
+layout = "wide"
+#----------------------------------------
 
-st.title("Bienvenido al análisis de noticias")
+st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
+st.title(page_title + " " + page_icon)
+
 st.write("Explora los datos y analiza tendencias en las noticias.")
 
 st.sidebar.success("Selecciona una página en la barra lateral.")

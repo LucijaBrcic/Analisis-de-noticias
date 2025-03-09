@@ -1,0 +1,7 @@
+
+[theme]
+primaryColor = "#0056b3"  # Deep Blue for buttons & links
+backgroundColor = "#F9F9F9"  # Soft White for the main background
+secondaryBackgroundColor = "#E3E3E3"  # Light Grey for sidebar
+textColor = "#1A1A1A"  # Almost black for readability
+font = "sans serif"  # Professional and clean look
