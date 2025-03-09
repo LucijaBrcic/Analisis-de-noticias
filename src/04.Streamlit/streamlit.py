@@ -69,10 +69,6 @@ def home_page():
     
 
 
-    # Generame unos textos o seccion de bienvenidaexplicando las distintas secciones de la aplicacion y el temario estudiando en el bootcamp de ciencia de datos de hackaboss
-    # lo dejo a tu eleccion
-# Página principal (Landing Page)
-
 def landing_page():
 
     st.title("Página Principal")
