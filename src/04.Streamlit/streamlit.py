@@ -48,8 +48,6 @@ def run_query(query):
 
 def home_page():
     st.write("Bienvenidos")
-    # Generame unos textos o seccion de bienvenidaexplicando las distintas secciones de la aplicacion y el temario estudiando en el bootcamp de ciencia de datos de hackaboss
-    # lo dejo a tu eleccion
     st.write("Esta aplicación web permite analizar noticias de Meneame")
     st.write("Puedes navegar por las distintas secciones de la aplicación en el menú de la izquierda")
     st.write("Las secciones disponibles son:")
@@ -71,6 +69,8 @@ def home_page():
     
 
 
+    # Generame unos textos o seccion de bienvenidaexplicando las distintas secciones de la aplicacion y el temario estudiando en el bootcamp de ciencia de datos de hackaboss
+    # lo dejo a tu eleccion
 # Página principal (Landing Page)
 
 def landing_page():
@@ -567,7 +567,6 @@ def about_us():
     integrantes = [
         ("Lucia", "https://example.com", "https://github.com/LucijaBrcic"),
         ("Jordi", "https://example.com", "https://github.com/jmontseny"),
-        ("Manu", "https://example.com", "https://github.com/manusortizz"),
         ("Luis Serrano Borras", "https://example.com", "https://github.com/Luis-serrab"),
     ]
 
