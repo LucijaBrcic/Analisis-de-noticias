@@ -20,6 +20,12 @@ class NewsAnalyzer:
         query = "SELECT DISTINCT category FROM category_table"
         return pd.read_sql(query, self.engine)['category'].tolist()
     
+    def get_news_titles(self):
+        query = "SELECT news_id, title FROM news_info_table"
+        df = pd.read_sql(query, self.engine)
+        return df
+
+    
     def get_data(self, news_ids=None, category=None):
         if news_ids:
             query = f"""
@@ -65,7 +71,7 @@ class NewsAnalyzer:
             theta=variables + [variables[0]],
             fill='toself',
             name=label1,
-            text=values1,
+            text=[f"{var}: {val}" for var, val in zip(variables, values1)],
             hoverinfo='text',
             line=dict(color='blue', width=2)
         ))
@@ -74,7 +80,7 @@ class NewsAnalyzer:
             theta=variables + [variables[0]],
             fill='toself',
             name=label2,
-            text=values2,
+            text=[f"{var}: {val}" for var, val in zip(variables, values2)],
             hoverinfo='text',
             line=dict(color='red', width=2)
         ))
@@ -85,9 +91,10 @@ class NewsAnalyzer:
             width=800,
             height=800
         )
-        fig.show()
-    
+        return fig
+
     def comparar_plotly(self, entidad1, entidad2, tipo='noticia'):
+      
         max_values = self.get_max_values()
         variables = ["clicks", "comments", "karma", "positive_votes", "anonymous_votes", "negative_votes"]
 
@@ -106,7 +113,7 @@ class NewsAnalyzer:
             values1 = noticia1.iloc[0][variables].values.tolist()
             values2 = noticia2.iloc[0][variables].values.tolist()
 
-            self.plot_comparison_plotly(data1, f'Noticia {entidad1}', data2, f'Noticia {entidad2}', variables, values1, values2)
+            return self.plot_comparison_plotly(data1, f'Noticia {entidad1}', data2, f'Noticia {entidad2}', variables, values1, values2)
 
         elif tipo == 'categoria':
             df1 = self.get_data(category=entidad1)
@@ -119,6 +126,7 @@ class NewsAnalyzer:
             values1 = df1.iloc[0][variables].values.tolist()
             values2 = df2.iloc[0][variables].values.tolist()
             
-            self.plot_comparison_plotly(data1, f'Categoría {entidad1}', data2, f'Categoría {entidad2}', variables, values1, values2)
+            return self.plot_comparison_plotly(data1, f'Categoría {entidad1}', data2, f'Categoría {entidad2}', variables, values1, values2)
+        
         else:
             raise ValueError("El tipo debe ser 'noticia' o 'categoria'.")

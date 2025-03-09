@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import pandas as pd
 
-st.title("Bienvenido al análisis de noticias")
-st.write("Explora los datos y analiza tendencias en las noticias.")
+st.title("🔍 Buscador de Noticias")
 
 load_dotenv()
 

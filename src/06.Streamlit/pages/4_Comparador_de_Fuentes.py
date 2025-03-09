@@ -26,8 +26,13 @@ if option == "Noticias":
 
     if compare_button and news_id1 and news_id2:
         try:
-            fig = analyzer.comparar_plotly(int(news_id1), int(news_id2), tipo="noticia")
-            graph_placeholder.plotly_chart(fig)
+            fig = analyzer.comparar_plotly(category1, category2, tipo="categoria")
+
+            if isinstance(fig, go.Figure):  # Check if the returned value is a Plotly Figure
+                graph_placeholder.plotly_chart(fig, use_container_width=True)
+            else:
+                st.error("Error: No se pudo generar la gráfica. Verifique los datos seleccionados.")
+
         except ValueError as e:
             st.error(str(e))
 
