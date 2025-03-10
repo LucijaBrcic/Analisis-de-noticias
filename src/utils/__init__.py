@@ -1,1 +1,1 @@
-from . import text_processing, provincias_data, nuevo_choropleth_map, comparador_de_noticias, graphs, nuevo_scraper
+from . import text_processing, provincias_data, nuevo_choropleth_map, graphs, nuevo_scraper, comparador

@@ -48,7 +48,8 @@ class DataVisualizer:
             plotly.graph_objects.Figure: The correlation heatmap.
         """
         # Select only numeric columns
-        numeric_df = self.df.select_dtypes(include=["number"])
+        columns_to_select = ["meneos", "clicks", "karma", "comments", "positive_votes", "negative_votes", "anonymous_votes"]
+        numeric_df = self.df[columns_to_select]
 
         # Compute correlation matrix
         corr_matrix = numeric_df.corr().round(2)  # Round values to 2 decimal places
