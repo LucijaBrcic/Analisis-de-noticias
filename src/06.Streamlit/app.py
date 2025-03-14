@@ -6,7 +6,7 @@ import sys
 
 load_dotenv()
 user = os.getenv("user")
-sys.path.append(f"/Users/{user}/Projects/Analisis-de-noticias/src")
+sys.path.append(f"/Users/{user}/Analisis-de-noticias/src")
 
 from utils.nuevo_scraper import MeneameScraper
 
