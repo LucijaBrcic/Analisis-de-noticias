@@ -1,13 +1,18 @@
 import streamlit as st
-from datetime import datetime
 import os
-from dotenv import load_dotenv
 import sys
+from dotenv import load_dotenv
+from datetime import datetime
+import pandas as pd
 
+# Load environment variables
 load_dotenv()
 user = os.getenv("user")
-sys.path.append(f"/Users/{user}/Analisis-de-noticias/src")
 
+# Add project path
+sys.path.append(f"/Users/{user}/Projects/Analisis-de-noticias/src")
+
+# Import the scraper class
 from utils.nuevo_scraper import MeneameScraper
 
 
@@ -21,22 +26,42 @@ st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
 
 st.title(page_title + " " + page_icon)
 
+
+# Initialize Scraper
 scraper = MeneameScraper()
 
-# Display last scraped date
+# Get last scraped date
 last_scraped = scraper.get_last_scraped_date()
+
+# Display last scraped date
 if last_scraped:
-    st.write(f"🕒 Última fecha de actualización: **{last_scraped}**")
+    st.write(f"🕒 **Última fecha de actualización:** {last_scraped}")
 else:
-    st.write("⚠️ No hay datos anteriores. Haz clic en 'Actualizar' para comenzar.")
+    st.write("⚠️ No hay datos anteriores. Presiona 'Actualizar' para comenzar.")
 
 # Button to trigger scraping
 if st.button("🔄 Actualizar Datos"):
     with st.spinner("Obteniendo nuevas noticias..."):
         result = scraper.scrape()
 
+    # Get the new last scraped date
     updated_last_scraped = scraper.get_last_scraped_date()
-    st.success(f"✅ {result} Última fecha de actualización: **{updated_last_scraped}**")
+    
+    # Display result
+    if updated_last_scraped:
+        st.success(f"✅ {result} **Última fecha de actualización:** {updated_last_scraped}")
+    else:
+        st.warning("⚠️ No se encontraron nuevas noticias.")
+
+# Display the latest scraped data (if available)
+latest_file = scraper.get_latest_scraped_file()
+
+if latest_file:
+    df = pd.read_csv(latest_file)
+    st.write("📁 **Últimos datos guardados:**")
+    st.dataframe(df.tail(10))  # Show last 10 rows
+else:
+    st.write("⚠️ No hay datos guardados todavía.")
 
 
 
