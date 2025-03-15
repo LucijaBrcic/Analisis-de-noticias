@@ -24,11 +24,11 @@ class MeneameScraper:
         while True:
             scraped_data = self.scrape_page(page, last_scraped_date)
             if not scraped_data:  
-                break  # Stop when there are no new articles
+                break  
 
             results.extend(scraped_data)
             page += 1  
-            time.sleep(random.uniform(1, 2))
+            time.sleep(random.uniform(1, 2))  
 
         if results:
             self.save_new_data(results)
@@ -49,9 +49,7 @@ class MeneameScraper:
 
         soup = BeautifulSoup(response.text, "lxml")
 
-        extracted_news = self.extract_news(soup, last_scraped_date)
-
-        return extracted_news
+        return self.extract_news(soup, last_scraped_date)
 
     def extract_news(self, soup, last_scraped_date):
         newswrap = soup.find(id="newswrap")
@@ -59,7 +57,6 @@ class MeneameScraper:
             return []
 
         news_summaries = newswrap.find_all(class_="news-summary")
-
         new_entries = []
 
         for news_summary in news_summaries:
@@ -67,83 +64,82 @@ class MeneameScraper:
                 news_body = news_summary.find(class_="news-body")
                 if not news_body:
                     continue
-
+                
                 news_id = int(news_body.get("data-link-id"))
-                title = news_body.find("h2").find("a").text.strip()
+                center_content = news_body.find_next(class_="center-content")
+                title = center_content.find("h2").find("a").text.strip()
+                source_link = center_content.find("h2").find("a")["href"]
 
-                published_timestamp = int(news_body.find("span", attrs={"data-ts": True})["data-ts"])
+                content_div = news_body.find("div", class_="news-content")
+                content = content_div.text.strip() if content_div else ""
+
+                news_submitted = center_content.find("div", class_="news-submitted")
+                published_timestamp = int(news_submitted.find_all("span", attrs={"data-ts": True})[-1].get("data-ts"))
                 published_date = datetime.fromtimestamp(published_timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
                 if last_scraped_date and published_date <= last_scraped_date:
-                    return []  # Stop when reaching an already scraped news
+                    print(f"Skipping already scraped news: {title} ({published_date})")
+                    continue  
+
+                user_link = news_submitted.find("a", href=re.compile("/user/.+/history"))
+                user = user_link.text.strip() if user_link else "Desconocido"
+
+                source_span = news_submitted.find("span", class_="showmytitle")
+                source = source_span.text.strip() if source_span else "Desconocido"
+
+                news_details = news_body.find_next(class_="news-details")
+
+                comments = int(news_details.select_one("a.comments")["data-comments-number"]) if news_details.select_one("a.comments") else 0
+                positive_votes = int(news_details.select_one("span.positive-vote-number").text) if news_details.select_one("span.positive-vote-number") else 0
+                anonymous_votes = int(news_details.select_one("span.anonymous-vote-number").text) if news_details.select_one("span.anonymous-vote-number") else 0
+                negative_votes = int(news_details.select_one("span.negative-vote-number").text) if news_details.select_one("span.negative-vote-number") else 0
+                karma = int(news_details.select_one("span.karma-number").text) if news_details.select_one("span.karma-number") else 0
+                category = news_details.select_one("a.subname").text.strip() if news_details.select_one("a.subname") else "Desconocido"
+
+                clicks_span = news_body.find("span", id=f"clicks-number-{news_id}")
+                clicks = int(clicks_span.text.strip()) if clicks_span else 0
+
+                votes_a = news_body.find("a", id=f"a-votes-{news_id}")
+                meneos = int(votes_a.text.strip()) if votes_a else 0
+
+                story_link = news_summary.find("a", href=re.compile("^/story/"))
+                full_story_link = f"{self.base_url}{story_link['href']}" if story_link else "Desconocido"
+
+                scraped_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 new_entries.append({
-                    "news_id": news_id,
-                    "title": title,
-                    "published_date": published_date,
-                    "scraped_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "news_id": news_id, "title": title, "content": content, "full_story_link": full_story_link,
+                    "meneos": meneos, "clicks": clicks, "karma": karma, "positive_votes": positive_votes,
+                    "anonymous_votes": anonymous_votes, "negative_votes": negative_votes, "category": category,
+                    "comments": comments, "published_date": published_date, "user": user, "source": source,
+                    "source_link": source_link, "scraped_date": scraped_date
                 })
 
             except Exception as e:
+                print(f"Error procesando noticia: {e}")
                 continue
 
         return new_entries
-    
+
     def get_next_scraped_filename(self):
-        """Generate the next filename for saving scraped data."""
         existing_files = list(self.data_dir.glob("meneame_scraped_*.csv"))
         
         if not existing_files:
             return self.data_dir / "meneame_scraped_1.csv"
 
-        # Extract numbers from existing files
-        numbers = []
-        for file in existing_files:
-            match = re.search(r"meneame_scraped_(\d+)\.csv", str(file))
-            if match:
-                numbers.append(int(match.group(1)))
+        numbers = [int(re.search(r"meneame_scraped_(\d+)\.csv", str(f)).group(1)) for f in existing_files if re.search(r"meneame_scraped_(\d+)\.csv", str(f))]
 
         next_number = max(numbers) + 1 if numbers else 1
         return self.data_dir / f"meneame_scraped_{next_number}.csv"
 
-
     def save_new_data(self, new_data):
-        latest_file = self.get_latest_scraped_file()
-
-        if latest_file and os.path.exists(latest_file):
-            existing_df = pd.read_csv(latest_file, encoding="utf-8")
-            new_df = pd.DataFrame(new_data)
-            new_rows = new_df[~new_df.apply(tuple, 1).isin(existing_df.apply(tuple, 1))]
-
-            if new_rows.empty:
-                return
-        else:
-            new_rows = pd.DataFrame(new_data)
-
         new_filename = self.get_next_scraped_filename()
-        new_rows.to_csv(new_filename, index=False, encoding="utf-8")
+        pd.DataFrame(new_data).to_csv(new_filename, index=False, encoding="utf-8")
 
     def get_latest_scraped_file(self):
         files = glob.glob(str(self.data_dir / "meneame_scraped_*.csv"))
-
-        if not files:
-            return None
-
-        latest_file = max(files, key=os.path.getmtime)
-        
-        return latest_file
+        return max(files, key=os.path.getmtime) if files else None
 
     def get_last_scraped_date(self):
         latest_file = self.get_latest_scraped_file()
-        
-        if not latest_file:
-            return None  
-
-        df = pd.read_csv(latest_file, usecols=["scraped_date"], encoding="utf-8")
-
-        if df.empty:
-            return None
-
-        last_date = df["scraped_date"].max()
-
-        return last_date
+        return pd.read_csv(latest_file, usecols=["scraped_date"]).max()["scraped_date"] if latest_file else None
