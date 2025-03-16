@@ -1,11 +1,14 @@
 import streamlit as st
-import sqlalchemy
+import pickle
 import os
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 import sys
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
+import seaborn as sns
+import plotly.figure_factory as ff
 
 load_dotenv()
 
@@ -27,7 +30,7 @@ Para lograrlo, hemos aplicado distintos modelos de **Clustering, Clasificación 
 """)
 
 # 🔹 Subpage Navigation
-subpage = st.radio("Selecciona un análisis:", ["Clustering", "Clasificación", "Regresión", "Predicción de Cluster"])
+subpage = st.radio("Selecciona un análisis:", ["Clustering", "Clasificación", "Regresión", "Predicción de Noticias"])
 
 if subpage == "Clustering":
     st.subheader("🔍 Clustering")
@@ -97,15 +100,112 @@ if subpage == "Clustering":
         st.pyplot(st.session_state.heatmap)
 
 elif subpage == "Clasificación":
+    # 📌 Definir ruta de datos
+    DATA_PATH = "src/00.data/clustering"
+
     st.subheader("🎯 Clasificación")
     st.write("Aquí mostramos los resultados del análisis de Clasificación.")
+
+
+    # 📌 Cargar archivos necesarios
+    def load_pickle(file_path):
+        """Carga un archivo pickle si existe, sino devuelve None."""
+        try:
+            with open(file_path, "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            st.error(f"❌ No se encontró el archivo `{file_path}`.")
+            return None
+
+
+    # Cargar datos
+    y_test = load_pickle(os.path.join(DATA_PATH, "y_test.pkl"))
+    y_pred = load_pickle(os.path.join(DATA_PATH, "y_pred.pkl"))
+    cm = load_pickle(os.path.join(DATA_PATH, "confusion_matrix.pkl"))
+    df_numeric = load_pickle(os.path.join(DATA_PATH, "df_numeric.pkl"))
+    cluster_counts = load_pickle(os.path.join(DATA_PATH, "cluster_counts.pkl"))
+    df_cluster_means = load_pickle(os.path.join(DATA_PATH, "df_cluster_means.pkl"))
+    cluster_category_pct = load_pickle(os.path.join(DATA_PATH, "cluster_category_pct.pkl"))
+
+    # 📌 1️⃣ Distribución de Noticias por Cluster
+    if cluster_counts is not None:
+        st.markdown("### 📌 Distribución de Noticias por Cluster")
+
+        fig, ax = plt.subplots()
+        cluster_counts.plot(kind="bar", color=["red", "blue", "green"], ax=ax)
+        ax.set_xticks(range(len(cluster_counts.index)))
+        ax.set_xticklabels(cluster_counts.index, rotation=45)
+        ax.set_ylabel("Cantidad de Noticias")
+        ax.set_title("Distribución de Noticias por Cluster")
+
+        st.pyplot(fig)
+
+    # 📌 2️⃣ Características Promedio por Cluster
+    if df_cluster_means is not None:
+        st.markdown("### 📊 Características Promedio por Cluster")
+        st.dataframe(df_cluster_means.style.format("{:.2f}"))
+
+    # 📌 3️⃣ Explicación de los Clusters
+    st.markdown("### 🔎 Explicación de los Clusters")
+    st.write("""
+    #### Cluster 0 → Noticias Polémicas o Virales 🔥  
+    - Menos numeroso, pero con la media más alta de **clicks**, **votos anónimos** y **comentarios**.  
+    - Genera una gran interacción, pero también es el grupo con más **votos negativos**.  
+
+    #### Cluster 1 → Noticias Estándar 📰  
+    - Es el cluster más numeroso con gran diferencia.  
+    - Tiene el menor número de **meneos y clicks**, un **karma medio** y los **votos positivos y negativos más bajos**.  
+    - Recibe la menor cantidad de **comentarios**, lo que sugiere menor interacción.  
+
+    #### Cluster 2 → Noticias Bien Recibidas 🌟  
+    - Recibe la mayor cantidad de **meneos** y tiene el **karma más alto**.  
+    - Los **votos positivos y anónimos** son los más altos, con una cantidad significativa de **comentarios**.  
+    - Representa las noticias populares y apreciadas dentro de la comunidad.  
+    """)
+
+    # 📌 4️⃣ Distribución de Categorías por Cluster (%)
+    if cluster_category_pct is not None:
+        st.markdown("### 📊 Distribución de Categorías por Cluster (%)")
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.heatmap(cluster_category_pct, cmap="coolwarm", annot=True, fmt=".1f", linewidths=0.5, ax=ax)
+        ax.set_title("Distribución de Categorías por Cluster (%)")
+        ax.set_ylabel("Cluster")
+        ax.set_xlabel("Categoría")
+
+        st.pyplot(fig)
+
+    # 📌 5️⃣ Matriz de Confusión
+    if cm is not None:
+        st.markdown("### 🔥 Matriz de Confusión")
+        labels = ["Cluster 0 - Noticias polémicas", "Cluster 1 - Noticias estándar",
+                  "Cluster 2 - Noticias bien recibidas"]
+
+        fig = ff.create_annotated_heatmap(
+            z=cm,
+            x=labels,
+            y=labels,
+            colorscale="Blues",
+            showscale=True
+        )
+
+        fig.update_layout(title="Matriz de Confusión", xaxis=dict(title="Predicho"), yaxis=dict(title="Real"))
+        st.plotly_chart(fig, use_container_width=True)
+
+    # 📌 6️⃣ Reporte de Clasificación
+    if y_test is not None and y_pred is not None:
+        st.markdown("### 📊 Reporte de Clasificación")
+        report_dict = classification_report(y_test, y_pred, output_dict=True)
+        report_df = pd.DataFrame(report_dict).transpose()
+        st.dataframe(report_df.style.format({"precision": "{:.2f}", "recall": "{:.2f}", "f1-score": "{:.2f}"}))
+
 
 elif subpage == "Regresión":
     st.subheader("📈 Regresión")
     st.write("Aquí mostramos los resultados del análisis de Regresión.")
 
-elif subpage == "Predicción de Cluster":
-    st.subheader("🔮 Predicción de Cluster")
+elif subpage == "Predicción de Noticias":
+    st.subheader("🔮 Predicción de Noticias")
     st.write("Introduce los valores de una noticia y descubre a qué cluster pertenecería.")
 
     load_dotenv()
