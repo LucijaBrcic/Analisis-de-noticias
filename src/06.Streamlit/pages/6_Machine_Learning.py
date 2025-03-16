@@ -100,14 +100,14 @@ if subpage == "Clustering":
         st.pyplot(st.session_state.heatmap)
 
 elif subpage == "Clasificación":
-    # 📌 Definir ruta de datos
+    # Definir ruta de datos
     DATA_PATH = "src/00.data/clustering"
 
     st.subheader("🎯 Clasificación")
     st.write("Aquí mostramos los resultados del análisis de Clasificación.")
 
 
-    # 📌 Cargar archivos necesarios
+    # Cargar archivos necesarios
     def load_pickle(file_path):
         """Carga un archivo pickle si existe, sino devuelve None."""
         try:
@@ -116,7 +116,6 @@ elif subpage == "Clasificación":
         except FileNotFoundError:
             st.error(f"❌ No se encontró el archivo `{file_path}`.")
             return None
-
 
     # Cargar datos
     y_test = load_pickle(os.path.join(DATA_PATH, "y_test.pkl"))
@@ -127,7 +126,7 @@ elif subpage == "Clasificación":
     df_cluster_means = load_pickle(os.path.join(DATA_PATH, "df_cluster_means.pkl"))
     cluster_category_pct = load_pickle(os.path.join(DATA_PATH, "cluster_category_pct.pkl"))
 
-    # 📌 1️⃣ Distribución de Noticias por Cluster
+    # Distribución de Noticias por Cluster
     if cluster_counts is not None:
         st.markdown("### 📌 Distribución de Noticias por Cluster")
 
@@ -140,12 +139,12 @@ elif subpage == "Clasificación":
 
         st.pyplot(fig)
 
-    # 📌 2️⃣ Características Promedio por Cluster
+    # Características Promedio por Cluster
     if df_cluster_means is not None:
         st.markdown("### 📊 Características Promedio por Cluster")
         st.dataframe(df_cluster_means.style.format("{:.2f}"))
 
-    # 📌 3️⃣ Explicación de los Clusters
+    # Explicación de los Clusters
     st.markdown("### 🔎 Explicación de los Clusters")
     st.write("""
     #### Cluster 0 → Noticias Polémicas o Virales 🔥  
@@ -163,7 +162,7 @@ elif subpage == "Clasificación":
     - Representa las noticias populares y apreciadas dentro de la comunidad.  
     """)
 
-    # 📌 4️⃣ Distribución de Categorías por Cluster (%)
+    # Distribución de Categorías por Cluster (%)
     if cluster_category_pct is not None:
         st.markdown("### 📊 Distribución de Categorías por Cluster (%)")
 
@@ -175,7 +174,7 @@ elif subpage == "Clasificación":
 
         st.pyplot(fig)
 
-    # 📌 5️⃣ Matriz de Confusión
+    # Matriz de Confusión
     if cm is not None:
         st.markdown("### 🔥 Matriz de Confusión")
         labels = ["Cluster 0 - Noticias polémicas", "Cluster 1 - Noticias estándar",
@@ -192,17 +191,99 @@ elif subpage == "Clasificación":
         fig.update_layout(title="Matriz de Confusión", xaxis=dict(title="Predicho"), yaxis=dict(title="Real"))
         st.plotly_chart(fig, use_container_width=True)
 
-    # 📌 6️⃣ Reporte de Clasificación
+    # Reporte de Clasificación
     if y_test is not None and y_pred is not None:
         st.markdown("### 📊 Reporte de Clasificación")
         report_dict = classification_report(y_test, y_pred, output_dict=True)
         report_df = pd.DataFrame(report_dict).transpose()
         st.dataframe(report_df.style.format({"precision": "{:.2f}", "recall": "{:.2f}", "f1-score": "{:.2f}"}))
 
-
 elif subpage == "Regresión":
-    st.subheader("📈 Regresión")
-    st.write("Aquí mostramos los resultados del análisis de Regresión.")
+    st.subheader("📊 Análisis de Regresión")
+    st.write("Aquí mostramos los resultados del análisis de regresión aplicada a los clicks en Menéame.")
+
+    # 📌 Definir ruta de datos
+    DATA_PATH = "src/00.data/clustering"
+
+
+    # 📌 Función para cargar archivos pickle
+    def load_pickle(file_path):
+        """Carga un archivo pickle si existe, sino devuelve None."""
+        try:
+            with open(file_path, "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            st.error(f"❌ No se encontró el archivo `{file_path}`.")
+            return None
+
+
+    # 📌 Cargar los archivos necesarios
+    metrics_df = load_pickle(os.path.join(DATA_PATH, "metrics_df.pkl"))
+    resultados = load_pickle(os.path.join(DATA_PATH, "correlacion_clicks.pkl"))
+    comparacion_datasets = load_pickle(os.path.join(DATA_PATH, "comparacion_datasets.pkl"))
+
+    # Métricas de Modelos
+    st.header("Métricas de los Modelos")
+    st.dataframe(metrics_df)
+
+    # Explicación de los resultados
+    st.header("📌 Explicación de los Resultados")
+
+    st.markdown("""
+    - 📉 **Los modelos explican poco la variabilidad de clicks** debido a la baja R².
+    - 🧐 **Posibles razones:** Variables no consideradas como la hora, día, semana, mes de publicación, fuente de la noticia, etc.
+    - ⚠️ **Errores altos:** Median AE y MAE son elevados en todos los modelos.
+    - 🏆 **Mejor modelo:** Gradient Boosting Regressor destaca en todos los casos.
+
+    **Análisis por cluster:**
+    - ✅ **Cluster 1 (Noticias estándar)**: Más fácil de predecir, con errores más bajos y mejor R².
+    - 🔥 **Cluster 0 (Noticias polémicas o virales)**: Mayor error de predicción (Median AE y MAE más altos).
+    - 🤔 **Cluster 2 (Noticias bien recibidas)**: Errores intermedios entre Cluster 0 y 1.
+
+    **Próximos pasos:**
+    - 📌 Probar **Redes Neuronales**.
+    - 🛠️ Explorar **nuevas variables** y mejorar Feature Engineering.
+    """)
+
+    # 📈 Análisis de Correlación con Clicks
+    st.header("📈 Análisis de Correlación con Clicks")
+
+    # Selector de cluster
+    cluster_seleccionado = st.selectbox("Selecciona un cluster:", list(resultados.keys()))
+
+    # Extraer el gráfico de correlación del cluster seleccionado
+    fig_corr = resultados[cluster_seleccionado]["fig_corr"]
+
+    # Mostrar el gráfico interactivo de correlación con Plotly
+    st.subheader(f"🔍 Correlación de Variables con Clicks - Cluster {cluster_seleccionado}")
+    st.plotly_chart(fig_corr, use_container_width=True)
+
+    # Comparación antes y después del modelo
+    st.header("📊 Comparación del Dataset Antes y Después del Modelo")
+
+    comparacion_datasets = load_pickle(os.path.join(DATA_PATH, "comparacion_datasets.pkl"))
+
+    if comparacion_datasets is not None:
+        # Opciones del desplegable
+        opciones_graficos = {
+            "Promedio de Clicks por Cluster": "fig_cluster",
+            "Promedio de Clicks por Categoría": "fig_category",
+            "Boxplot de Clicks": "fig_box",
+            "Histograma de Clicks": "fig_hist"
+        }
+
+        # Desplegable para seleccionar gráfico
+        seleccion = st.selectbox(
+            "📊 Selecciona el gráfico que quieres ver:",
+            list(opciones_graficos.keys()),
+            index=0  # Por defecto se muestra "Promedio de Clicks por Cluster"
+        )
+
+        # 📌 Mostrar el gráfico seleccionado
+        st.plotly_chart(comparacion_datasets[opciones_graficos[seleccion]], use_container_width=True)
+    else:
+        st.error("❌ No se encontró el archivo `comparacion_datasets.pkl`.")
+
 
 elif subpage == "Predicción de Noticias":
     st.subheader("🔮 Predicción de Noticias")
