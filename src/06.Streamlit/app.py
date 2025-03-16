@@ -1,21 +1,26 @@
 import streamlit as st
 import os
 import sys
-from dotenv import load_dotenv
-from datetime import datetime
 import pandas as pd
 from pathlib import Path
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+from sqlalchemy.exc import IntegrityError
 
 # Load environment variables
 load_dotenv()
 user = os.getenv("user")
 
-# Add project path
-sys.path.append(f"/Users/{user}/Analisis-de-noticias/src")
+if user:
+    sys.path.append(f"/Users/{user}/Analisis-de-noticias/src")
+else:
+    st.error(" Error: USER environment variable not found. Check your .env file.")
 
-# Import scraper and processor
+# Import scraper, processor, clustering, and DataProcessor
 from utils.nuevo_scraper import MeneameScraper
-from utils.text_processing import NewsProcessor  # Import the text processing class
+from utils.text_processing import NewsProcessor  
+import utils.cluster_model
+from utils.sql_streamlit import DataProcessor 
 
 #---------------SETTINGS-----------------
 page_title = "Análisis de noticias"
@@ -24,17 +29,29 @@ layout = "wide"
 #----------------------------------------
 
 st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
-
-st.title(page_title + " " + page_icon)
+st.title(f"{page_title} {page_icon}")
 
 # Initialize scraper and processor
 scraper = MeneameScraper()
 processor = NewsProcessor()
 
-# Define path for cleaned data
-processed_data_dir = Path("../00.data/preprocesado")
-processed_data_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
-processed_file_path = processed_data_dir / "meneame_procesado.csv"
+# Load database credentials
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+host = os.getenv("HOST", "localhost")
+database = "meneame"
+
+# Create connection to SQL
+DATABASE_URL = f"mysql+pymysql://{user}:{password}@{host}/{database}"
+
+try:
+    engine = create_engine(DATABASE_URL)
+    st.success("✅ Conexión a la base de datos exitosa.")
+except Exception as e:
+    st.error(f"Error al conectar con la base de datos: {e}")
+
+# Initialize DataProcessor
+data_processor = DataProcessor(engine)
 
 # Display last scraped date
 last_scraped = scraper.get_last_scraped_date()
@@ -49,7 +66,6 @@ if st.button("🔄 Actualizar Datos"):
         result = scraper.scrape()
 
     updated_last_scraped = scraper.get_last_scraped_date()
-
     if updated_last_scraped:
         st.success(f"✅ {result} **Última fecha de actualización:** {updated_last_scraped}")
     else:
@@ -58,27 +74,44 @@ if st.button("🔄 Actualizar Datos"):
 # Get the latest scraped file
 latest_file = scraper.get_latest_scraped_file()
 
-if latest_file:
-    df = pd.read_csv(latest_file)
-    print(df.columns)  # Check what columns are present
+if latest_file and Path(latest_file).exists():
+    try:
+        df = pd.read_csv(latest_file)
+        st.write("🧹 **Limpiando los datos...**")
 
-    # Run the cleaning process
-    st.write("🧹 **Limpiando los datos...**")
-    df_cleaned = processor.assign_province_and_community(df)
-    df_cleaned = processor.categorize_news(df_cleaned)
-    df_cleaned = processor.change_type(df_cleaned)
+        # Data Processing
+        df_cleaned = processor.assign_province_and_community(df)
+        df_cleaned = processor.categorize_news(df_cleaned)
 
-    # Save cleaned data separately
-    df_cleaned.to_csv(processed_file_path, index=False)
-    
-    st.write(f"✅ **Datos limpios guardados en:** {processed_file_path}")
-    st.write("📁 **Últimos datos limpios:**")
-    st.dataframe(df_cleaned.tail(10))
+        # Clustering
+        df_clustered = utils.cluster_model.apply_clustering(
+            df_cleaned,
+            scaler_path="../00.data/clustering/scaler.pkl",
+            encoder_path="../00.data/clustering/encoder.pkl",
+            ml_clustering_path="../00.data/clustering/ml_clustering.pkl",
+            output_path="../00.data/clustering/scraped_news_with_clusters.csv"
+        )
+
+        df_final = data_processor.process_dataframe(df_clustered)
+
+        # Drop algunas columnas
+        df_final = df_final.drop(columns=["category", "user", "provincia", "source", "comunidad", "full_story_link"], errors="ignore")
+        df_final.rename(columns={"cluster": "cluster_id"}, inplace=True)
+
+        # Mandar a SQL
+        try:
+            df_final.to_sql("news_info_table", engine, if_exists="append", index=False, method="multi")
+        except IntegrityError:
+            st.warning("⚠️ Algunas noticias ya existen en la base de datos y han sido ignoradas.")
+        except Exception as e:
+            st.error(f"Error al enviar datos a SQL: {e}")
+
+
+    except Exception as e:
+        st.error(f"Error al procesar los datos: {e}")
 
 else:
-    st.write("⚠️ No hay datos guardados todavía.")
-
-
+    st.write("No hay datos guardados todavía.")
 
 
 
