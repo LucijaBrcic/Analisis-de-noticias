@@ -4,17 +4,18 @@ import sys
 from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
 user = os.getenv("user")
 
 # Add project path
-sys.path.append(f"/Users/{user}/Projects/Analisis-de-noticias/src")
+sys.path.append(f"/Users/{user}/Analisis-de-noticias/src")
 
-# Import the scraper class
+# Import scraper and processor
 from utils.nuevo_scraper import MeneameScraper
-
+from utils.text_processing import NewsProcessor  # Import the text processing class
 
 #---------------SETTINGS-----------------
 page_title = "Análisis de noticias"
@@ -26,14 +27,17 @@ st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
 
 st.title(page_title + " " + page_icon)
 
-
-# Initialize Scraper
+# Initialize scraper and processor
 scraper = MeneameScraper()
+processor = NewsProcessor()
 
-# Get last scraped date
-last_scraped = scraper.get_last_scraped_date()
+# Define path for cleaned data
+processed_data_dir = Path("../00.data/preprocesado")
+processed_data_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+processed_file_path = processed_data_dir / "meneame_procesado.csv"
 
 # Display last scraped date
+last_scraped = scraper.get_last_scraped_date()
 if last_scraped:
     st.write(f"🕒 **Última fecha de actualización:** {last_scraped}")
 else:
@@ -44,24 +48,37 @@ if st.button("🔄 Actualizar Datos"):
     with st.spinner("Obteniendo nuevas noticias..."):
         result = scraper.scrape()
 
-    # Get the new last scraped date
     updated_last_scraped = scraper.get_last_scraped_date()
-    
-    # Display result
+
     if updated_last_scraped:
         st.success(f"✅ {result} **Última fecha de actualización:** {updated_last_scraped}")
     else:
         st.warning("⚠️ No se encontraron nuevas noticias.")
 
-# Display the latest scraped data (if available)
+# Get the latest scraped file
 latest_file = scraper.get_latest_scraped_file()
 
 if latest_file:
     df = pd.read_csv(latest_file)
-    st.write("📁 **Últimos datos guardados:**")
-    st.dataframe(df.tail(10))  # Show last 10 rows
+    print(df.columns)  # Check what columns are present
+
+    # Run the cleaning process
+    st.write("🧹 **Limpiando los datos...**")
+    df_cleaned = processor.assign_province_and_community(df)
+    df_cleaned = processor.categorize_news(df_cleaned)
+    df_cleaned = processor.change_type(df_cleaned)
+
+    # Save cleaned data separately
+    df_cleaned.to_csv(processed_file_path, index=False)
+    
+    st.write(f"✅ **Datos limpios guardados en:** {processed_file_path}")
+    st.write("📁 **Últimos datos limpios:**")
+    st.dataframe(df_cleaned.tail(10))
+
 else:
     st.write("⚠️ No hay datos guardados todavía.")
+
+
 
 
 
