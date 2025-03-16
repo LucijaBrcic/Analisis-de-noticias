@@ -192,6 +192,30 @@ def generar_mapa(nivel="provincia", variable="engagement"):
     colormap = branca.colormap.linear.YlOrRd_09.scale(min_value, max_value)
     colormap.caption = variable.replace("_", " ").capitalize()
 
+    # Definir tooltip dinámico con información adicional
+    tooltip_fields = ["name", variable]
+    tooltip_aliases = [f"{nivel.capitalize()}:", f"{variable.replace('_', ' ').capitalize()}:"]
+
+    # Añadir datos extra según la variable seleccionada
+    if variable == "engagement":
+        tooltip_fields += ["clicks", "poblacion"]
+        tooltip_aliases += ["Clicks:", "Población:"]
+    elif variable == "karma_por_publicacion":
+        tooltip_fields += ["num_publicaciones", "karma"]
+        tooltip_aliases += ["Publicaciones:", "Karma total:"]
+    elif variable == "votos_positivos_por_publicacion":
+        tooltip_fields += ["num_publicaciones", "positive_votes"]
+        tooltip_aliases += ["Publicaciones:", "Votos positivos:"]
+    elif variable == "votos_negativos_por_publicacion":
+        tooltip_fields += ["num_publicaciones", "negative_votes"]
+        tooltip_aliases += ["Publicaciones:", "Votos negativos:"]
+    elif variable == "meneos_por_publicacion":
+        tooltip_fields += ["num_publicaciones", "meneos"]
+        tooltip_aliases += ["Publicaciones:", "Meneos:"]
+    elif variable == "comentarios_por_publicacion":
+        tooltip_fields += ["num_publicaciones", "comments"]
+        tooltip_aliases += ["Publicaciones:", "Comentarios:"]
+
     # Agregar capa de polígonos coloreados
     folium.GeoJson(
         gdf,
@@ -204,8 +228,8 @@ def generar_mapa(nivel="provincia", variable="engagement"):
         },
         highlight_function=lambda feature: {"fillOpacity": 1, "weight": 2, "color": "black"},
         tooltip=folium.GeoJsonTooltip(
-            fields=["name", variable],
-            aliases=[f"{nivel.capitalize()}:", f"{variable.replace('_', ' ').capitalize()}:"],
+            fields=tooltip_fields,
+            aliases=tooltip_aliases,
             localize=True, sticky=False,
             style=("font-size: 16px; font-weight: bold;")
         )
