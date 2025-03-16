@@ -156,15 +156,25 @@ elif subpage == "Predicción de Cluster":
     categoria = st.selectbox("Categoría", CATEGORIAS_FIJAS)
 
     # Botón para hacer la predicción
-    if st.button("Predecir Cluster"):
+    if st.button("Predecir Cluster y Clicks"):
         from utils.prediccion_cluster import predecir_cluster  # Importar la función
+        from utils.prediccion_regresion import predecir_clicks  # Importar la función de regresión
 
+        # **1️⃣ Predecir Cluster**
         cluster_predicho = predecir_cluster(meneos, karma, positive_votes, anonymous_votes, negative_votes, comments,
                                             categoria)
+
         CLUSTER_SIGNIFICADO = {
             0: "Noticias polémicas o virales",
             1: "Noticias estándar",
             2: "Noticias bien recibidas"
         }
-        # Mostrar el resultado
-        st.success(f"La noticia pertenece al cluster: **{CLUSTER_SIGNIFICADO[cluster_predicho]}** (Cluster {cluster_predicho})")
+
+        # **2️⃣ Predecir Clicks usando el Cluster obtenido**
+        predicted_clicks = predecir_clicks(meneos, karma, positive_votes, anonymous_votes, negative_votes, comments,
+                                           categoria, cluster_predicho)
+
+        # **3️⃣ Mostrar los resultados**
+        st.success(
+            f"La noticia pertenece al cluster: **{CLUSTER_SIGNIFICADO[cluster_predicho]}** (Cluster {cluster_predicho})")
+        st.markdown(f"🔮 Se estima que la noticia recibirá aproximadamente **{int(predicted_clicks):,} clicks**.")
