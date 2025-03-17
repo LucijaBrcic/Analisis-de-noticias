@@ -101,7 +101,7 @@ if subpage == "Clustering":
 
 elif subpage == "Clasificación":
     # Definir ruta de datos
-    DATA_PATH = "src/00.data/clustering"
+    DATA_PATH = "../00.data/clustering"
 
     st.subheader("🎯 Clasificación")
     st.write("Aquí mostramos los resultados del análisis de Clasificación.")
@@ -203,7 +203,7 @@ elif subpage == "Regresión":
     st.write("Aquí mostramos los resultados del análisis de regresión aplicada a los clicks en Menéame.")
 
     # 📌 Definir ruta de datos
-    DATA_PATH = "src/00.data/clustering"
+    DATA_PATH = "../00.data/clustering"
 
 
     # 📌 Función para cargar archivos pickle
