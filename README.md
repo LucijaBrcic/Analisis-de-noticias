@@ -1,4 +1,8 @@
-# Analisis de noticias
+# 📰 News Analysis App
+
+This project is a complete pipeline for collecting, processing, and visualizing news data using Python and Streamlit. It includes a web scraper, data storage, and an interactive web application for displaying insights.
+
+## 📁 Folder Structure
 
 ## Estructura de carpetas y ficheros
 - src (alojara todo el codigo fuente)
